@@ -13,7 +13,7 @@ Project Mentors:
 - Pankaj Thorat
 ---
 ## 1. Vision and Goals of The Project: 
-Our project aims to develop a tool that will help our users migrate artifacts between clusters with zero downtime.
+Our project aims to develop a tool that will help our users migrate Kubernetes artifacts between clusters with zero downtime.
 
 ### Goal:
  - **Easy to use**
