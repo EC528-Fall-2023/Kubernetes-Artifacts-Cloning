@@ -22,7 +22,12 @@ Our project aims to develop a tool that will help our users migrate Kubernetes a
  - **Automation**
 ---
 ## 2. Users/Personas Of The Project:
-This tool should be used by **Cloud Developers** and/or **SREs(Site Reliability Engineers)** who need to migrate deployed artifacts to a cluster that might have a different environment setup.
+ - **Cloud Developers**:
+ 
+   Cloud developers are empowered by this tool to seamlessly migrate deployed artifacts between clusters with varying environment setups. It simplifies the process of replicating applications across different stages of development, testing, and production, ensuring consistency and reducing manual configuration overhead.
+ - **Site Reliability Engineers (SREs)**:
+
+   SREs rely on this tool to efficiently duplicate and migrate entire application ecosystems across clusters with diverse configurations. This capability greatly assists in their responsibilities of maintaining application reliability, diagnosing issues, and conducting extensive testing in different environments, ultimately enhancing the overall resilience of the system.
 
 ---
 ## 3. Scope and Features Of The Project:
