@@ -75,8 +75,11 @@ Finding out whether cloning a Kubernetes Artifact from a source cluster to a des
 
 ---
 ## Release Planning:
-- First Sprint:
+- ### First Sprint:
    1. Learn about Kubernetes
    2. Create a small-scale Kubernetes deployment with ~2 or more machines
    3. Look into the etcd to see what information is available
+- ### Second Sprint:
+- ### Third Sprint:
+- ### Fourth Sprint:
 
