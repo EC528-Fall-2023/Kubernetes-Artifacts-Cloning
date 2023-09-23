@@ -33,7 +33,7 @@ One significant challenge in deploying Kubernetes within cloud data centers is t
 
 The objective of this project is to develop a tool that simplifies the migration of Kubernetes artifacts between clusters, reducing the need for manual intervention in existing environments. The concept revolves around examining the Kubernetes etcd (a key-value store used by Kubernetes that contains cluster data) to extract Kubernetes objects and any related dependency information associated with the artifact. If this information can be successfully acquired, the tool will then proceed to analyze the resources available in the new cluster and perform a comparison to identify any discrepancies between the clusters. Once this is complete, the tool should attempt to resolve the dependency issues and deploy the Kubernetes object into the new cluster. This process enables the automatic adjustment of the new cluster to replicate the dependencies of the previous one.
 
-Overall, this seamless method of copying and pasting a Kubernetes object will prove essential for deploying new clusters and even establishing new data centers. It has the potential to reduce documentation requirements during the initial deployment of objects, minimize the time needed to recreate objects on new clusters and facilitate seamless automation.
+Overall, this seamless method of copying and pasting a Kubernetes object will prove essential for deploying new clusters and even establishing new data centers. It has the potential to reduce documentation requirements during the initial deployment of objects, minimize the time needed to recreate objects on new clusters, and facilitate seamless automation.
 
 ---
 ## Users/Personas Of The Project:
