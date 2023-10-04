@@ -12,6 +12,11 @@ Project Mentors:
 - Mudit Verma
 - Pankaj Thorat
 ---
+
+## Demo
+- Sprint 1 Demo https://drive.google.com/file/d/1Z4qHl7f_VoqTE5u_RJZHtbc5YJk-_zHp/view?usp=sharing
+
+---
 ## Terminology:
 - **Object(Artifact):** These are entities, typically described in YAML format, within Kubernetes that represent the state of the cluster. They define the running application, resource allocation, and policies for restarts, upgrades, and fault tolerance.
 
