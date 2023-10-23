@@ -15,6 +15,7 @@ Project Mentors:
 
 ## Demo
 - Sprint 1 Demo https://drive.google.com/file/d/1Z4qHl7f_VoqTE5u_RJZHtbc5YJk-_zHp/view?usp=sharing
+- Sprint 2 Demo https://drive.google.com/file/d/1N1lxMwgkdPSXE-OrpjoDQ2XdskJj7fPM/view?usp=sharing
 
 ---
 ## Terminology:
