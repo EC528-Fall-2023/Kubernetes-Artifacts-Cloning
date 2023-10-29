@@ -103,7 +103,6 @@ while [[ "$#" -gt 0 ]]; do
 			;;
 		-a|--all) 
 			ALL=true 
-			getAllYaml $SRC_KUBECONFIG
 			;;
 		-h|--help) 
 			usage; 
@@ -119,10 +118,26 @@ if [[ -z "${SRC_KUBECONFIG}" || -z "${DEST_KUBECONFIG}" ]]; then
 	echo "Error: --source and --destination options are mandatory!"
 	usage
 	exit 1
+else
+	#check if source and destination cluster exists
+	src=$(kubectl config use-context $SRC_KUBECONFIG 2>&1)
+	dest=$(kubectl config use-context $DEST_KUBECONFIG 2>&1)
+	if [[ $src == *"no context exists"*  ]] || [[ $dest == *"no context exists"*  ]]; then 
+		echo "Cluster name not exists, check below"
+		kubectl config get-contexts
+		exit 1
+	fi
+	#get src cluster config file
+	kubectl config use-context $SRC_KUBECONFIG
+	kubectl config view --raw > "$SRC_KUBECONFIG-config.yaml"
+	kubectl config use-context $DEST_KUBECONFIG
+	kubectl config view --raw > "$DEST_KUBECONFIG-config.yaml"
 fi
 
+if $ALL; then
+	getAllYaml $SRC_KUBECONFIG
+fi
 # Your actual logic for cloning goes here
 echo "Cloning objects from source cluster with KUBECONFIG: ${SRC_KUBECONFIG} to destination cluster with KUBECONFIG: ${DEST_KUBECONFIG}..."
 
-# TODO: Implement the logic for cloning the objects based on the provided parameters
-
+kubectl --kubeconfig="$DEST_KUBECONFIG-config.yaml" apply -f "info_of_$SRC_KUBECONFIG.yaml"
