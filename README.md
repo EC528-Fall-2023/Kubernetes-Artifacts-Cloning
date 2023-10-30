@@ -94,6 +94,20 @@ By examining the three key aspects during tool development, we can determine the
    - ConfigMaps
    - Secrets
 
+     Example: kubectl -s source_cluster -d destination_cluster --all -n namespace
+---
+## Reach Goal
+```bash
+kubectl clone
+  -s/--source <KUBECONFIG_SRC_CLUSTER>
+  -d/--destination  <KUBECONFIG_DEST_CLUSTER>
+  -o/--objects pods, services, ……….., all
+  -l/--labels  e.g. app=robot-shop  
+  -n/--namepsace <name>
+  -a/--all Everything that exist in this cluster should be migrated
+  -h/--help Get usage of plugin
+
+```
 ---
 ## Acceptance criteria:
 Finding out whether cloning a Kubernetes Artifact from a source cluster to a destination cluster with command line syntax is feasible.
