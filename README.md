@@ -22,19 +22,6 @@ Project Mentors:
 - Slide: https://docs.google.com/presentation/d/18NDsu-o_hRxpfE_t5pgW4kGkH9WqZ_N9FCPA-ZMZKhE/edit?usp=sharing
 
 ---
-## Terminology:
-- **Object(Artifact):** These are entities, typically described in YAML format, within Kubernetes that represent the state of the cluster. They define the running application, resource allocation, and policies for restarts, upgrades, and fault tolerance.
-
-- **Pod:** A Kubernetes Pod is a collection of one or more containers that share storage and network resources.
-
-- **Node:** A Kubernetes Node is a worker machine responsible for running and managing containerized applications.
-
-- **Cluster:** A Kubernetes Cluster is a grouping of nodes that run containerized applications in an automated and distributed manner.
-
-- **ConfigMaps:** ConfigMaps are API objects that allow you to store configurations for other objects to use in the form of key-value pairs.
-
-
----
 
 ## Vision and Goals of The Project: 
 As modern computing trends increasingly shift towards offloading computational tasks to the cloud, the deployment of Kubernetes, an open-source platform designed for managing containerized workloads and services, has become indispensable for cloud data centers. 
@@ -50,6 +37,10 @@ Overall, this seamless method of copying and pasting a Kubernetes object will pr
  - **Cloud Developers:** Cloud developers are empowered by this tool to seamlessly migrate deployed Kubernetes objects, or artifacts, between clusters with varying environment setups. It simplifies the process of replicating applications across different stages of development, testing, and production, ensuring consistency and reducing manual configuration overhead.
 
  - **Site Reliability Engineers (SREs):** SREs can rely on this tool to efficiently duplicate and migrate entire application ecosystems across clusters with diverse configurations. This capability greatly assists in their responsibilities of maintaining application reliability, diagnosing issues, and conducting extensive testing in different environments, ultimately enhancing the overall resilience of the system.
+
+---
+## Solution Architecture:
+![alt text](https://github.com/EC528-Fall-2023/Kubernetes-Artifacts-Cloning/blob/main/solution%20structure.jpg "Structure for the solution")
 
 ---
 ## Scope and Features Of The Project:
@@ -97,6 +88,7 @@ By examining the three key aspects during tool development, we can determine the
      Example: kubectl -s source_cluster -d destination_cluster --all -n namespace
 ---
 ## Reach Goal
+**A Kubectl plugin that can clone user-specified object/namespace/label/single object from given source cluster to the destination cluster**
 ```bash
 kubectl clone
   -s/--source <KUBECONFIG_SRC_CLUSTER>
@@ -104,10 +96,16 @@ kubectl clone
   -o/--objects pods, services, ……….., all
   -l/--labels  e.g. app=robot-shop  
   -n/--namepsace <name>
-  -a/--all Everything that exist in this cluster should be migrated
+  -a/--all Everything that exists in this cluster should be migrated
+  -i/--item Specified single object with related dependencies
   -h/--help Get usage of plugin
 
 ```
+Example: 
+ - kubectl clone -o all -n robot-shop -s source_config -d dest_config
+ - kubectl clone -o pods, services -n robot-shop -s source_config -d dest_config 
+ - kubectl clone -a -s source_config -d dest_config 
+
 ---
 ## Acceptance criteria:
 Finding out whether cloning a Kubernetes Artifact from a source cluster to a destination cluster with command line syntax is feasible.
@@ -137,3 +135,15 @@ Finding out whether cloning a Kubernetes Artifact from a source cluster to a des
 - ### Fifth Sprint:
    1. Performance analysis of kubectl clone
    2. Finalize kubectl clone plugin
+ 
+---
+## Terminology:
+- **Object(Artifact):** These are entities, typically described in YAML format, within Kubernetes that represent the state of the cluster. They define the running application, resource allocation, and policies for restarts, upgrades, and fault tolerance.
+
+- **Pod:** A Kubernetes Pod is a collection of one or more containers that share storage and network resources.
+
+- **Node:** A Kubernetes Node is a worker machine responsible for running and managing containerized applications.
+
+- **Cluster:** A Kubernetes Cluster is a grouping of nodes that run containerized applications in an automated and distributed manner.
+
+- **ConfigMaps:** ConfigMaps are API objects that allow you to store configurations for other objects to use in the form of key-value pairs.
