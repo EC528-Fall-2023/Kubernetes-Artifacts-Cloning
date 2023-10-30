@@ -120,20 +120,20 @@ Finding out whether cloning a Kubernetes Artifact from a source cluster to a des
 ---
 ## Release Planning:
 - ### First Sprint:
-   1. Learn about Kubernetes
+   1. Learn about Kubernetes architecture
    2. Create a small-scale Kubernetes deployment with ~2 or more machines
    3. Migrate namespaces within the same cluster
 - ### Second Sprint:
-   1. Implement a more complex application
+   1. Deploy a more complex Kubernetes application to a Kubernetes cluster
    2. Migrating objects between clusters
-   3. Look into the etcd to see what information is available
-   4. Use kubeview to visualize dependency
+   3. Snapshot the ETCD
+   4. Use Kubeview to visualize dependency
 - ### Third Sprint:
    1. Implement kubectl clone functionality
-   2. Implement object selector flag of kubectl clone
-   3. Implement namespace selector flag of kubectl clone
-   4. Implement label selector flag of kubectl clone
-   5. Try to understand ETCD snapshot
+  
+       - Implement object selector flag of kubectl clone
+       - Implement namespace selector flag of kubectl clone
+       - Implement label selector flag of kubectl clone
 - ### Fourth Sprint:
    1. Get objects from ETCD snapshot
    2. Compare querying object between etcd & kubernetes api
