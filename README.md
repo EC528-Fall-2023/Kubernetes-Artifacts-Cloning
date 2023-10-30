@@ -80,6 +80,21 @@ The project aims to address the challenges associated with replicating Kubernete
 By examining the three key aspects during tool development, we can determine the viability of our proposed concept. If it's not feasible, we'll provide a clear explanation detailing why and the challenges faced.
 
 ---
+## Minimal Viable Product:
+
+   Migrating all basic objects within a namespace from source cluster to destination cluster
+   - Pods
+   - Services
+   - Persistent Volumes
+   - Namespaces
+   - Deployments
+   - ReplicaSets
+   - DaemonSets
+   - StatefulSets
+   - ConfigMaps
+   - Secrets
+
+---
 ## Acceptance criteria:
 Finding out whether cloning a Kubernetes Artifact from a source cluster to a destination cluster with command line syntax is feasible.
 
@@ -88,8 +103,23 @@ Finding out whether cloning a Kubernetes Artifact from a source cluster to a des
 - ### First Sprint:
    1. Learn about Kubernetes
    2. Create a small-scale Kubernetes deployment with ~2 or more machines
-   3. Look into the etcd to see what information is available
+   3. Migrate namespaces within the same cluster
 - ### Second Sprint:
+   1. Implement a more complex application
+   2. Migrating objects between clusters
+   3. Look into the etcd to see what information is available
+   4. Use kubeview to visualize dependency
 - ### Third Sprint:
+   1. Implement kubectl clone functionality
+   2. Implement object selector flag of kubectl clone
+   3. Implement namespace selector flag of kubectl clone
+   4. Implement label selector flag of kubectl clone
+   5. Try to understand ETCD snapshot
 - ### Fourth Sprint:
+   1. Get objects from ETCD snapshot
+   2. Compare querying object between etcd & kubernetes api
+   3. Test kubectl clone with different cases
+   4. Get dependencies of specific cluster
 - ### Fifth Sprint:
+   1. Performance analysis of kubectl clone
+   2. Finalize kubectl clone plugin
