@@ -43,32 +43,39 @@ Overall, this seamless method of copying and pasting a Kubernetes object will pr
 ![alt text](https://github.com/EC528-Fall-2023/Kubernetes-Artifacts-Cloning/blob/main/solution%20structure.jpg "Structure for the solution")
 
 ---
+## Solution Concept:
+### Build a kubectl plugin called **clone** that can migrate specified objects from source cluster to destination cluster
+- **Label Selector**
+  Allow selection of user-defined labels to get objects.
+  Can be done by
+  ```bash
+  kubectl get <object> --selector=<label>
+  ```
+- **Object Selector**
+  Allow selection of Kubernetes artifacts.
+  Can be done by
+  ```bash
+  kubectl get <object>
+  ```
+- **Config Files**
+  Allow cluster switching through config files as well as direct access to the cluster.
+  Can be done by
+  ```bash
+  kubectl config view --raw > <filename>.yaml #Get the config file of current cluster
+  kubectl --kubeconfig=<filename>.yaml <kubectl command> #Direct kubectl access to given cluster through config file
+  ```
+- **Dependency Analysis**
+  - Method 1: Reverse engineering kubeview to get dependency.
+  - Method 2: Filter through YAML files to get dependency. (Need to validate feasibility)
+- **Copy Entire Cluster**
+  - Method 1: Get needed object information through the Kubernetes API server into a YAML file.
+  - Method 2: Get needed object information through ETCD snapshot into a YAML file.
+---
 ## Scope and Features Of The Project:
  - **Easy to use:** Given the command line code specifying source and destination cluster an automatic cloning of artifacts should occur. 
  - **Selective migration:** If given parameters such as namespaces, labels, etc. the program should clone only the given parameters.
  - **Prevent Changes on Artifacts:** Everything within the artifact should stay unchanged after cloning (Pods, API services, Ingresses, ConfigMaps, Secrets, Volumes, Deployments, and StatefulSets) to the destination cluster. 
  - **Automation:** The migration should have minimized manual intervention, and the transfer should be automated.
-
----
-## Solution Concept:
-The project aims to address the challenges associated with replicating Kubernetes clusters in an efficient and automated manner. The proposed solution concept involves a multi-step approach, with a strong emphasis on feasibility analysis, which includes dependency analysis, selective migration, and the utilization of Kubernetes' etcd for the migration process.
-
-### 1. Dependency Analysis:
-
-   A dependency analysis will be carried out to determine the relationships and dependencies between Kubernetes objects within a cluster.  
-   The goal is to identify any dependencies that may hinder successful migration and to develop strategies for resolving them.
-
-### 2. Selective Migration:
-
-   The migration utility will support selective migration based on parameters such as namespaces, labels, and object types.
-   Users will be able to specify which objects and configurations they want to migrate from the source cluster to the destination cluster.
-
-### 3. Leveraging Kubernetes etcd:
-   
-   The project capitalizes on local key-value store of Kubernetes' cluster, known as etcd, which stores critical information about the cluster, such as Kubernetes clusters’ configurations.
-   By interfacing with etcd, the utility gains access to a comprehensive source of information regarding the cluster's objects and their relationships.
-
-By examining the three key aspects during tool development, we can determine the viability of our proposed concept. If it's not feasible, we'll provide a clear explanation detailing why and the challenges faced.
 
 ---
 ## Minimal Viable Product:
