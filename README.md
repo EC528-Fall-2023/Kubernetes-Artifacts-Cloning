@@ -79,18 +79,21 @@ Overall, this seamless method of copying and pasting a Kubernetes object will pr
 
 ---
 ## Minimal Viable Product:
-
-   Migrating all basic objects within a namespace from source cluster to destination cluster
-   - Pods
-   - Services
-   - Persistent Volumes
-   - Namespaces
-   - Deployments
-   - ReplicaSets
-   - DaemonSets
-   - StatefulSets
-   - ConfigMaps
-   - Secrets
+  1. Implement a Kubectl plugin
+  2. Migrating all basic objects within a namespace from source cluster to destination cluster
+     - Pods
+     - Services
+     - Persistent Volumes
+     - Namespaces
+     - Deployments
+     - ReplicaSets
+     - DaemonSets
+     - StatefulSets
+     - ConfigMaps
+     - Secrets
+   3. Ability to migrate the whole namespace that can consist of multiple objects
+   4. Ability to migrate over objects by label
+   5. Ability to migrate the whole cluster (including all its objects)
 
      Example: kubectl -s source_cluster -d destination_cluster --all -n namespace
 ---
@@ -112,10 +115,6 @@ Example:
  - kubectl clone -o all -n robot-shop -s source_config -d dest_config
  - kubectl clone -o pods, services -n robot-shop -s source_config -d dest_config 
  - kubectl clone -a -s source_config -d dest_config 
-
----
-## Acceptance criteria:
-Finding out whether cloning a Kubernetes Artifact from a source cluster to a destination cluster with command line syntax is feasible.
 
 ---
 ## Release Planning:
