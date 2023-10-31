@@ -146,10 +146,38 @@ Example:
 ## Terminology:
 - **Object(Artifact):** These are entities, typically described in YAML format, within Kubernetes that represent the state of the cluster. They define the running application, resource allocation, and policies for restarts, upgrades, and fault tolerance.
 
-- **Pod:** A Kubernetes Pod is a collection of one or more containers that share storage and network resources.
+- **Pod:** Pods are the smallest unit of deployment in Kubernetes. They reside on cluster nodes and have their IP addresses, enabling them to communicate with the rest of the cluster. A single pod can host one or more containers, providing storage and networking resources. One of the key characteristics of Kubernetes pods is that they are ephemeral. In practice, a pod can fail without impacting the system's functioning. Kubernetes automatically replaces each failed pod with a new pod replica and keeps the cluster running. Aside from being container wrappers, pods also store configuration information that instructs Kubernetes on how to run the containers.
 
-- **Node:** A Kubernetes Node is a worker machine responsible for running and managing containerized applications.
+- **Services:** Services provide a way to expose applications running in pods. Their purpose is to represent a set of pods that perform the same function and set the policy for accessing those pods. Although pod failure is an expected event in a cluster, Kubernetes replaces the failed pod with a replica with a different IP address. This creates problems in communication between pods that depend on each other.
 
-- **Cluster:** A Kubernetes Cluster is a grouping of nodes that run containerized applications in an automated and distributed manner.
+- **Volume:** Volumes are objects whose purpose is to provide storage to pods. There are two basic types of volumes in Kubernetes:
+  - **Ephemeral volumes:** Ephemeral volumes persist only during the lifetime of the pod they are tied to.
+  - **Persistent volumes:** Persistent volumes are not destroyed when the pod crashes. Persistent volumes are created by issuing a request called PersistentVolumeClaim (PVC). Kubernetes uses PVCs to provision volumes, which then act as links between pods and physical storage.
 
-- **ConfigMaps:** ConfigMaps are API objects that allow you to store configurations for other objects to use in the form of key-value pairs.
+- **Namespaces:** The purpose of the Namespace object is to act as a separator of resources in the cluster. A single cluster can contain multiple namespaces, allowing administrators to organize the cluster better and simplify resource allocation. A new cluster comes with multiple namespaces created for system purposes and the default namespace for users. Administrators can create any number of additional namespaces - for example, one for development and one for testing.
+
+- **Deployments:** 
+  Deployments are controller objects that provide instructions on how Kubernetes should manage the pods hosting a containerized application. Using deployments, administrators can:
+
+    - Scale the number of pod replicas.
+    - Rollout updated code.
+    - Perform rollbacks to older code versions.
+
+  Once created, the deployment controller monitors the health of the pods and nodes. In case of a failure, it destroys the failed pods and creates new ones. It can also bypass the malfunctioning nodes, enabling the application to remain functional even when a hardware error occurs.
+
+
+- **ReplicationControllers:** ReplicationControllers ensure that the correct number of pod replicas are running on the cluster at all times. When creating a ReplicationController, the administrator specifies the desired number of pods. The controller then maintains their number, creating additional pods and terminating the extra ones when necessary.
+
+- **ReplicaSets:** ReplicaSets serve the same purpose as ReplicationControllers, i.e. maintaining the same number of pod replicas on the cluster. However, the difference between these two objects is the type of selectors they support. While ReplicationControllers accept only equality-based selectors, ReplicaSets additionally support set-based selectors.
+
+- **DaemonSets:** DaemonSets are controller objects whose purpose is to ensure that specific pods run on specific (or all) nodes in the cluster. Kubernetes scheduler ignores the pods created by a DaemonSet, so those pods last for as long as the node exists. This object is particularly useful for setting up daemons that need to run on each node, like those used for cluster storage, log collection, and node monitoring. By default, a DaemonSet creates a pod on every node in the cluster. If the object needs to target specific nodes, their selection is performed via the nodeSelector field in the configuration file.
+
+- **StatefulSets:** While Deployments and Replication Controllers can handle stateless apps, stateful apps require a workload object called StatefulSet. A StatefulSet gives each pod a unique identity, which persists across pod restarts.
+
+- **ConfigMaps:** ConfigMaps are Kubernetes objects used to store container configuration data in key-value pairs. By separating configuration data from the rest of the container image, ConfigMaps enable the creation of lighter and more portable images. They also allow developers to use the same code with different configurations depending on whether the app is in the development, testing, or production phase.
+  
+- **Secrets:** Secretes is a type of Kubernetes object that are used to store sensitive information, such as passwords, API keys, and tokens. They provide a way to manage sensitive data and ensure it is securely stored and transmitted to the pods in the cluster.
+
+- **Node:** A Kubernetes Node is a worker machine responsible for running and managing containerized applications. Nodes are the underlying hardware or virtual machines on which Kubernetes runs. Each node has the necessary components to run pods and is managed by the control plane. These components include the kubelet, which is responsible for communication between the control plane and the node, and the kube-proxy, which maintains network rules on the node.
+
+- **Cluster:** A cluster refers to the set of nodes that run containerized applications. These nodes can be physical machines or virtual machines. The cluster is the foundation of Kubernetes and is responsible for running the applications and managing the workloads. It provides a platform for orchestrating and managing containerized applications, ensuring that they run smoothly and reliably.
