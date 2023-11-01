@@ -15,12 +15,14 @@ Project Mentors:
 
 ## Demo
 1. Sprint 1 Demo
-- Video: https://drive.google.com/file/d/1Z4qHl7f_VoqTE5u_RJZHtbc5YJk-_zHp/view?usp=sharing
-- Slide: https://docs.google.com/presentation/d/1FwfGiANWx7YXiKDqEk44b3bk1b8Ca_JUZ4UpKAlLGbk/edit?usp=share_link
+  - Video: https://drive.google.com/file/d/1Z4qHl7f_VoqTE5u_RJZHtbc5YJk-_zHp/view?usp=sharing
+  - Slide: https://docs.google.com/presentation/d/1FwfGiANWx7YXiKDqEk44b3bk1b8Ca_JUZ4UpKAlLGbk/edit?usp=share_link
 2. Sprint 2 Demo
-- Video: https://drive.google.com/file/d/1N1lxMwgkdPSXE-OrpjoDQ2XdskJj7fPM/view?usp=sharing
-- Slide: https://docs.google.com/presentation/d/18NDsu-o_hRxpfE_t5pgW4kGkH9WqZ_N9FCPA-ZMZKhE/edit?usp=sharing
-
+  - Video: https://drive.google.com/file/d/1N1lxMwgkdPSXE-OrpjoDQ2XdskJj7fPM/view?usp=sharing
+  - Slide: https://docs.google.com/presentation/d/18NDsu-o_hRxpfE_t5pgW4kGkH9WqZ_N9FCPA-ZMZKhE/edit?usp=sharing
+3. Sprint 3 Demo
+  - Video: https://drive.google.com/file/d/1XQgMggvMHjYAgVdGXt7POdgEj9JA3ngk/view?usp=sharing
+  - Slide: https://docs.google.com/presentation/d/1oBbQ8YCLvOvei6NFMF049_H8_1s0dvXjS06JYqgdUcA/edit?usp=sharing
 ---
 
 ## Vision and Goals of The Project: 
