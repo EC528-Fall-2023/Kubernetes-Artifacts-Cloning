@@ -18,6 +18,7 @@ function usage() {
     echo "kubectl clone -s /path/to/source/kubeconfig -d /path/to/destination/kubeconfig -o pods,services -l app=robot-shop -n my-namespace"
 }
 
+# check if the namespace exists in target cluster, if not, create it.
 function checkNamespace(){
     local namespace="$1"
     if ! kubectl get namespace "$namespace" --context="$DEST_KUBECONFIG" 2>/dev/null; then
@@ -32,7 +33,7 @@ function switchCluster(){
     kubectl config use-context $CLUSTER_CONTEXT
 }
 
-function get_namespaces() {
+function get_all_namespaces() {
   local namespaces=($(kubectl get namespaces -o custom-columns=NAME:.metadata.name --no-headers=true))
   local valid_namespaces=()
 
@@ -49,7 +50,7 @@ function cloneAndModifyYaml() {
     local resource_type="$1"
     local namespace="$2"
     local dest_cluster="$3"
-    local label="$4"  
+    local resource_name="$4"
     local output_file_list=()
 
     # Check if the resource exists in the source namespace
@@ -57,7 +58,13 @@ function cloneAndModifyYaml() {
         return
     fi
 
-    local names=($(kubectl get "$resource_type" -n "$namespace" --no-headers=true -o custom-columns=NAME:.metadata.name | grep -v 'kube-root-ca.crt'))
+    # Check if the resource name is specified
+    if [ -z "$resource_name" ]; then
+        local names=($(kubectl get "$resource_type" -n "$namespace" --no-headers=true -o custom-columns=NAME:.metadata.name | grep -v 'kube-root-ca.crt'))
+    else
+        local names=("$resource_name")
+    fi
+    
 
     for n in "${names[@]}"; do
         > "/tmp/${namespace}_${n}.yaml" # clear
@@ -92,11 +99,106 @@ function cloneAndModifyYaml() {
 #     cloneAndModifyYaml "$1" "$2" "$3"
 # }
 
+function check_resource(){
+    # check if the command contains -n
+    if [ "$has_NAMESPACE" = false]; then
+
+        NAMESPACES=($(get_all_namespaces))
+    
+    fi
+
+    if [ "$has_LABELS" = false ]; then
+
+        LABELS=("")
+    fi
+
+    # check if the command contains -o
+    if [ "$has_OBJECTS" = false ]; then
+    
+        OBJECTS=("")
+
+    fi
+}
+
+function combination(){
+    for namespace in "${NAMESPACES[@]}"; do
+        
+        if [ -z "$LABELS" ] && [ -n "$OBJECTS" ]; then
+            # LABELS为空且OBJECTS不为空, 根据OBJECTS筛选
+            for object in "${OBJECTS[@]}"; do
+                # 根据组合执行相应的操作，例如使用 kubectl 获取和迁移资源
+                local name_list=()
+                echo "Namespace: $namespace, Object Type: $object"
+                name_list+=($(kubectl get $object -n $namespace --no-headers=true -o custom-columns=NAME:.metadata.name | grep -v 'kube-root-ca.crt'| grep -v 'kubernetes'))
+                # 在这里根据组合执行 kubectl 操作
+                # 例如：
+                # kubectl get $object -n $namespace -o yaml
+                # kubectl apply -f resource.yaml
+                for name in "${name_list[@]}"; do
+                    cloneAndModifyYaml "$object" "$namespace" "$DEST_KUBECONFIG" "$name"
+                done
+            done
+
+
+        elif [ -n "$LABELS" ] && [ -z "$OBJECTS" ]; then
+            # 如果 LABELS 不为空且 OBJECTS 为空，根据 LABELS 进行筛选
+            for label in "${LABELS[@]}"; do
+                # 根据组合执行相应的操作，例如使用 kubectl 获取和迁移资源
+                for type in "${types[@]}"; do
+                    local name_list=()
+                    echo "Namespace: $namespace, Label: $label, Type: $type"
+                    name_list+=($(kubectl get $type --selector="$label" -n $namespace --no-headers=true -o custom-columns=NAME:.metadata.name | grep -v 'kube-root-ca.crt'| grep -v 'kubernetes'))
+                    for name in "${name_list[@]}"; do
+                        cloneAndModifyYaml "$type" "$namespace" "$DEST_KUBECONFIG" "$name"
+                    done
+                done
+                # 在这里根据组合执行 kubectl 操作
+                # 例如：
+                # kubectl get all -n $namespace --selector="$label" -o yaml
+                # kubectl apply -f resource.yaml
+            done
+        elif [ -n "$LABELS" ] && [ -n "$OBJECTS" ]; then
+            # 如果 LABELS 和 OBJECTS 都不为空，组合它们进行筛选
+            for object in "${OBJECTS[@]}"; do
+                local name_list=()
+                for label in "${LABELS[@]}"; do
+                    # 根据组合执行相应的操作，例如使用 kubectl 获取和迁移资源
+                    echo "Namespace: $namespace, Label: $label, Object Type: $object"
+                    name_list+=($(kubectl get $object -n $namespace --selector="$label" --no-headers=true -o custom-columns=NAME:.metadata.name | grep -v 'kube-root-ca.crt'| grep -v 'kubernetes'))
+                    # 在这里根据组合执行 kubectl 操作
+                    # 例如：
+                    # kubectl get $object -n $namespace --selector="$label" -o yaml
+                    # kubectl apply -f resource.yaml
+                done
+                for name in "${name_list[@]}"; do
+                    cloneAndModifyYaml "$object" "$namespace" "$DEST_KUBECONFIG" "$name"
+                done
+            done
+        else
+            # 如果没有任何标签或对象，则获取和迁移所有资源
+            # kubectl get all -n $namespace -o yaml
+            # kubectl apply -f resource.yaml
+            for type in "${types[@]}"; do
+                local name_list=()
+                name_list+=($(kubectl get $type -n $namespace --no-headers=true -o custom-columns=NAME:.metadata.name | grep -v 'kube-root-ca.crt'| grep -v 'kubernetes'))
+                for name in "${name_list[@]}"; do
+                    cloneAndModifyYaml "$type" "$namespace" "$DEST_KUBECONFIG" "$name"
+                done
+            done
+            echo "Getting and migrating all resources in namespace: $namespace"
+        fi
+    done
+
+}
 
 # ---------- Program Starts Here ----------
 
 # parse command
 # only support single namespace now
+has_NAMESPACE=false;
+has_LABELS=false;
+has_OBJECTS=false;
+
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         -s|--source) 
@@ -107,7 +209,8 @@ while [[ "$#" -gt 0 ]]; do
             DEST_KUBECONFIG="$2"; 
             shift 2
             ;;
-        -n|--namespace)   #如果没有-n的话就clone all
+        -n|--namespace)   
+            has_NAMESPACE=true
             NAMESPACES+=("$2")
             shift 2
             while [[ "$1" != -* && "$#" -gt 0 ]]; do
@@ -116,6 +219,7 @@ while [[ "$#" -gt 0 ]]; do
             done
             ;;
         -l|--labels)  
+            has_LABELS=true
             LABELS+=("$2")
             shift 2
             while [[ "$1" != -* && "$#" -gt 0 ]]; do
@@ -124,6 +228,7 @@ while [[ "$#" -gt 0 ]]; do
             done
             ;;
         -o|--objects) 
+            has_OBJECTS=true
             OBJECTS+=("$2")
             shift 2
             while [[ "$1" != -* && "$#" -gt 0 ]]; do
@@ -185,31 +290,59 @@ fi
 
 
 # apply order must be: "persistentvolumes" "configmaps" "secret" "pods" "deployment" "service" "replicasets" "statefulsets" "daemonsets"
-if $ALL; then
+if [[$ALL]] ; then
     echo "Cloning all objects from source cluster with KUBECONFIG: ${SRC_KUBECONFIG} to destination cluster with KUBECONFIG: ${DEST_KUBECONFIG}..."
     switchCluster "$SRC_KUBECONFIG"
 
-    namespace_list=($(get_namespaces))
+    namespace_list=($(get_all_namespaces))
     for namespace in "${namespace_list[@]}"; do
         checkNamespace "$namespace"
         for type in "${types[@]}"; do
             cloneAndModifyYaml "$type" "$namespace" "$DEST_KUBECONFIG"
         done
     done
+    exit 0
 fi
 
-# 2.1. Check if namespaces exist in  source cluster
-
-# 2.2. Check if namespaces exist in  dest cluster
-if [ -n "${NAMESPACES[*]}" ]; then
-    for name in "${NAMESPACES[@]}"; do
-        checkNamespace "$name"
+# 2. Check if namespaces exist in source/dest cluster
+if [[$has_NAMESPACE]]; then
+    for ns in "${NAMESPACES[@]}"; do
+        # source
+        if ! kubectl get namespace "$ns" --context="$SRC_KUBECONFIG" 2>/dev/null; then
+        echo "Namespace $namespace does not exist in the source cluster. Check below"
+        kubectl get namespace --context="$SRC_KUBECONFIG"
+        exit 1
+        fi
+        # destination
+        checkNamespace "$ns"
     done
-else
-    echo "NAMESPACES is empty. No need checking"
+
 fi
 
-# 3. Check if objects exist in source namespace
 
+# 3. Check if objects exist in source namespace/cluster
+[code needed correct]
+if [[$has_OBJECTS]]; then
+    for obj in "${OBJECTS[@]}"; do
+        if [[$has_NAMESPACE]]; then
+            for ns in "${NAMESPACES[@]}"; do
+                if ! kubectl get "$obj" -n "$ns" --context="$SRC_KUBECONFIG" 2>/dev/null; then
+                    echo "Object $obj does not exist in namespace: $ns"
+                    exit 1
+                fi
+            done
+        else
+            if ! kubectl get "$obj" --context="$SRC_KUBECONFIG" 2>/dev/null; then
+                echo "Object $obj does not exist"
+                exit 1
+            fi
 
+        fi
+    done
+    
+fi
+
+#---------------- Environment Check Done ----------------
+
+combination()
 
