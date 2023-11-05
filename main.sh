@@ -18,20 +18,31 @@ function usage() {
     echo "kubectl clone -s /path/to/source/kubeconfig -d /path/to/destination/kubeconfig -o pods,services -l app=robot-shop -n my-namespace"
 }
 
-# check if the namespace exists in target cluster, if not, create it.
-function checkNamespace(){
+# Check if the namespace exists in target cluster, if not, create it.
+function checkNamespace() {
     local namespace="$1"
     if ! kubectl get namespace "$namespace" --context="$DEST_KUBECONFIG" 2>/dev/null; then
-    echo "Namespace $namespace does not exist in the target cluster. Creating..."
-    kubectl create namespace "$namespace" --context="$DEST_KUBECONFIG"
-    echo "Namespace $namespace created."
+        echo "Namespace $namespace does not exist in the target cluster. Creating..."
+        if kubectl create namespace "$namespace" --context="$DEST_KUBECONFIG"; then
+            echo "Namespace $namespace created."
+        else
+            echo "Failed to create namespace $namespace."
+            exit 1
+        fi
     fi
 }
 
-function switchCluster(){
-    CLUSTER_CONTEXT="$1"
-    kubectl config use-context $CLUSTER_CONTEXT
+
+function switchCluster() {
+    local CLUSTER_CONTEXT="$1"
+    if kubectl config use-context "$CLUSTER_CONTEXT" 2>/dev/null; then
+        echo "Switched to context: $CLUSTER_CONTEXT"
+    else
+        echo "Failed to switch to context: $CLUSTER_CONTEXT"
+        exit 1
+    fi
 }
+
 
 function get_all_namespaces() {
   local namespaces=($(kubectl get namespaces -o custom-columns=NAME:.metadata.name --no-headers=true))
@@ -55,12 +66,13 @@ function cloneAndModifyYaml() {
 
     # Check if the resource exists in the source namespace
     if ! kubectl get "$resource_type" -n "$namespace" --context="$SRC_KUBECONFIG" 2>/dev/null; then
+        echo "Resource: $resource_type not exist in $SRC_KUBECONFIG"
         return
     fi
 
     # Check if the resource name is specified
     if [ -z "$resource_name" ]; then
-        local names=($(kubectl get "$resource_type" -n "$namespace" --no-headers=true -o custom-columns=NAME:.metadata.name | grep -v 'kube-root-ca.crt'))
+        local names=($(kubectl get "$resource_type" -n "$namespace" --no-headers=true -o custom-columns=NAME:.metadata.name | grep -v 'kube-root-ca.crt' | grep -v 'kubernetes'))
     else
         local names=("$resource_name")
     fi
@@ -99,7 +111,7 @@ function cloneAndModifyYaml() {
 #     cloneAndModifyYaml "$1" "$2" "$3"
 # }
 
-function check_resource(){
+function check_filter(){
     # check if the command contains -n
     if [ "$has_NAMESPACE" = false]; then
 
@@ -121,6 +133,7 @@ function check_resource(){
 }
 
 function combination(){
+    switchCluster "$SRC_KUBECONFIG"
     for namespace in "${NAMESPACES[@]}"; do
         
         if [ -z "$LABELS" ] && [ -n "$OBJECTS" ]; then
@@ -248,6 +261,7 @@ while [[ "$#" -gt 0 ]]; do
     esac
 done
 
+check_filter
 
 echo "source: $SRC_KUBECONFIG"
 echo "destination: $DEST_KUBECONFIG"
@@ -263,18 +277,19 @@ done
 for obj in "${OBJECTS[@]}"; do
     echo "object: $obj"
 done
-types=("persistentvolumes" "configmaps" "secret" "pods" "deployment" "service" "replicasets" "statefulsets" "daemonsets")
 
 #Check environment before migration
 
 # 1. Check if clusters exist 
 
+# 1.1 Check if -s and -d are input
 if [[ -z "${SRC_KUBECONFIG}" || -z "${DEST_KUBECONFIG}" ]]; then
     echo "Error: --source and --destination options are mandatory!"
     usage
     exit 1
 else
-    #check if source and destination cluster exists
+
+# 1.2 Check if source and destination cluster exists
     src=$(kubectl config use-context $SRC_KUBECONFIG 2>&1)
     dest=$(kubectl config use-context $DEST_KUBECONFIG 2>&1)
     if [[ $src == *"no context exists"*  ]] || [[ $dest == *"no context exists"*  ]]; then 
@@ -287,10 +302,45 @@ else
     kubectl config view --raw > "$DEST_KUBECONFIG-config.yaml"
 fi
 
+# 2. Has -n, check if namespaces exist in source/dest cluster
+if [[$has_NAMESPACE]]; then
+    for ns in "${NAMESPACES[@]}"; do
+        # source
+        if ! kubectl get namespace "$ns" --context="$SRC_KUBECONFIG" 2>/dev/null; then
+        echo "Namespace $namespace does not exist in the source cluster. Check below"
+        kubectl get namespace --context="$SRC_KUBECONFIG"
+        exit 1
+        fi
+        # destination
+        checkNamespace "$ns"
+    done
+fi
 
+# 3. Check if objects exist in source namespace/cluster
+if [[ $has_OBJECTS ]]; then
+    for obj in "${OBJECTS[@]}"; do
+        local object_found=false  # Flag to track if the object is found in any namespace
+        for ns in "${NAMESPACES[@]}"; do
+            if kubectl get "$obj" -n "$ns" --context="$SRC_KUBECONFIG" 2>/dev/null; then
+                echo "Object $obj exists in namespace: $ns"
+                object_found=true
+                break
+            fi
+        done
+        if [ "$object_found" = false ]; then
+            echo "Object $obj does not exist in any of the specified namespaces."
+            exit 1
+        fi
+    done
+fi
+
+
+#---------------- Environment Check Done ----------------
+
+types=("persistentvolumes" "configmaps" "secret" "pods" "deployment" "service" "replicasets" "statefulsets" "daemonsets")
 
 # apply order must be: "persistentvolumes" "configmaps" "secret" "pods" "deployment" "service" "replicasets" "statefulsets" "daemonsets"
-if [[$ALL]] ; then
+if [[ $ALL ]] ; then
     echo "Cloning all objects from source cluster with KUBECONFIG: ${SRC_KUBECONFIG} to destination cluster with KUBECONFIG: ${DEST_KUBECONFIG}..."
     switchCluster "$SRC_KUBECONFIG"
 
@@ -304,45 +354,5 @@ if [[$ALL]] ; then
     exit 0
 fi
 
-# 2. Check if namespaces exist in source/dest cluster
-if [[$has_NAMESPACE]]; then
-    for ns in "${NAMESPACES[@]}"; do
-        # source
-        if ! kubectl get namespace "$ns" --context="$SRC_KUBECONFIG" 2>/dev/null; then
-        echo "Namespace $namespace does not exist in the source cluster. Check below"
-        kubectl get namespace --context="$SRC_KUBECONFIG"
-        exit 1
-        fi
-        # destination
-        checkNamespace "$ns"
-    done
-
-fi
-
-
-# 3. Check if objects exist in source namespace/cluster
-[code needed correct]
-if [[$has_OBJECTS]]; then
-    for obj in "${OBJECTS[@]}"; do
-        if [[$has_NAMESPACE]]; then
-            for ns in "${NAMESPACES[@]}"; do
-                if ! kubectl get "$obj" -n "$ns" --context="$SRC_KUBECONFIG" 2>/dev/null; then
-                    echo "Object $obj does not exist in namespace: $ns"
-                    exit 1
-                fi
-            done
-        else
-            if ! kubectl get "$obj" --context="$SRC_KUBECONFIG" 2>/dev/null; then
-                echo "Object $obj does not exist"
-                exit 1
-            fi
-
-        fi
-    done
-    
-fi
-
-#---------------- Environment Check Done ----------------
-
-combination()
+combination
 
