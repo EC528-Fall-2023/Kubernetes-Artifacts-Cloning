@@ -72,28 +72,43 @@ function cloneAndModifyYaml() {
 
     # Check if the resource name is specified
     if [ -z "$resource_name" ]; then
-        local names=($(kubectl get "$resource_type" -n "$namespace" --no-headers=true -o custom-columns=NAME:.metadata.name | grep -v 'kube-root-ca.crt' | grep -v 'kubernetes'))
+        local names=($(kubectl get "$resource_type" -n "$namespace" --no-headers=true -o custom-columns=NAME:.metadata.name | grep -v 'kube-root-ca.crt' | grep -v 'kubernetes' | grep -v 'default'))
     else
         local names=("$resource_name")
     fi
     
+    # if configmap and secret (and so on) has existed in the target cluster, k8s will combine them instead of overwriting
+    # therefore, the script will first check if the resouce has exisited in target cluster --> exist, delete it, then apply
 
     for n in "${names[@]}"; do
-        > "/tmp/${namespace}_${n}.yaml" # clear
-        kubectl get "$resource_type" "$n" -n "$namespace" -o yaml > "/tmp/${namespace}_${n}.yaml"
-
-        if [ "$resource_type" == "service" ]; then
-            > "/tmp/${namespace}_${n}_modified.yaml"
-            # Modify service YAML
-            yq eval 'del(.spec.ports[0].nodePort) | del(.spec.clusterIPs) | del(.spec.clusterIP)' "/tmp/${namespace}_${n}.yaml" > "/tmp/${namespace}_${n}_modified.yaml"
-            kubectl apply -f "/tmp/${namespace}_${n}_modified.yaml" --context="$dest_cluster" -n "$namespace"
-        else
-            # Apply other YAMLs directly
-            kubectl apply -f "/tmp/${namespace}_${n}.yaml" --context="$dest_cluster" -n "$namespace"
+        local resource_exists=false
+        if kubectl get "$resource_type" "$n" -n "$namespace" --context="$dest_cluster" &>/dev/null; then
+            # exist -> delete
+            kubectl delete "$resource_type" "$n" -n "$namespace" --context="$dest_cluster"
+            resource_exists=true
         fi
 
-        echo "$n migrated!"
-        output_file_list+=("/tmp/${namespace}_${n}.yaml")
+        > "/tmp/clone/${namespace}_${n}.yaml" # clear
+        kubectl get "$resource_type" "$n" -n "$namespace" -o yaml > "/tmp/clone/${namespace}_${n}.yaml"
+
+        if [ "$resource_type" == "service" ]; then
+            > "/tmp/clone/${namespace}_${n}_modified.yaml"
+            # Modify service YAML
+            yq eval 'del(.spec.ports[0].nodePort) | del(.spec.clusterIPs) | del(.spec.clusterIP)' "/tmp/clone/${namespace}_${n}.yaml" > "/tmp/clone/${namespace}_${n}_modified.yaml"
+            kubectl apply -f "/tmp/clone/${namespace}_${n}_modified.yaml" --context="$dest_cluster" -n "$namespace" 
+        else
+            # Apply other YAMLs directly
+            kubectl apply -f "/tmp/clone/${namespace}_${n}.yaml" --context="$dest_cluster" -n "$namespace" 
+        fi
+
+        if [ "$resource_exists" = true ]; then
+            echo "$n already existed in the target cluster and has been replaced."
+        else
+            echo "$n migrated to the target cluster."
+        fi
+
+        output_file_list+=("/tmp/clone/${namespace}_${n}.yaml")
+
     done
 
     echo "${output_file_list[@]}"
@@ -113,19 +128,19 @@ function cloneAndModifyYaml() {
 
 function check_filter(){
     # check if the command contains -n
-    if [ "$has_NAMESPACE" = false]; then
+    if [[ "$has_NAMESPACE" == false ]]; then
 
         NAMESPACES=($(get_all_namespaces))
     
     fi
 
-    if [ "$has_LABELS" = false ]; then
+    if [[ "$has_LABELS" == false ]]; then
 
         LABELS=("")
     fi
 
     # check if the command contains -o
-    if [ "$has_OBJECTS" = false ]; then
+    if [[ "$has_OBJECTS" == false ]]; then
     
         OBJECTS=("")
 
@@ -142,7 +157,7 @@ function combination(){
                 # 根据组合执行相应的操作，例如使用 kubectl 获取和迁移资源
                 local name_list=()
                 echo "Namespace: $namespace, Object Type: $object"
-                name_list+=($(kubectl get $object -n $namespace --no-headers=true -o custom-columns=NAME:.metadata.name | grep -v 'kube-root-ca.crt'| grep -v 'kubernetes'))
+                name_list+=($(kubectl get $object -n $namespace --no-headers=true -o custom-columns=NAME:.metadata.name | grep -v 'kube-root-ca.crt'| grep -v 'kubernetes'| grep -v 'default'))
                 # 在这里根据组合执行 kubectl 操作
                 # 例如：
                 # kubectl get $object -n $namespace -o yaml
@@ -160,7 +175,7 @@ function combination(){
                 for type in "${types[@]}"; do
                     local name_list=()
                     echo "Namespace: $namespace, Label: $label, Type: $type"
-                    name_list+=($(kubectl get $type --selector="$label" -n $namespace --no-headers=true -o custom-columns=NAME:.metadata.name | grep -v 'kube-root-ca.crt'| grep -v 'kubernetes'))
+                    name_list+=($(kubectl get $type --selector="$label" -n $namespace --no-headers=true -o custom-columns=NAME:.metadata.name | grep -v 'kube-root-ca.crt'| grep -v 'kubernetes'| grep -v 'default'))
                     for name in "${name_list[@]}"; do
                         cloneAndModifyYaml "$type" "$namespace" "$DEST_KUBECONFIG" "$name"
                     done
@@ -177,7 +192,7 @@ function combination(){
                 for label in "${LABELS[@]}"; do
                     # 根据组合执行相应的操作，例如使用 kubectl 获取和迁移资源
                     echo "Namespace: $namespace, Label: $label, Object Type: $object"
-                    name_list+=($(kubectl get $object -n $namespace --selector="$label" --no-headers=true -o custom-columns=NAME:.metadata.name | grep -v 'kube-root-ca.crt'| grep -v 'kubernetes'))
+                    name_list+=($(kubectl get $object -n $namespace --selector="$label" --no-headers=true -o custom-columns=NAME:.metadata.name | grep -v 'kube-root-ca.crt'| grep -v 'kubernetes'| grep -v 'default'))
                     # 在这里根据组合执行 kubectl 操作
                     # 例如：
                     # kubectl get $object -n $namespace --selector="$label" -o yaml
@@ -193,7 +208,7 @@ function combination(){
             # kubectl apply -f resource.yaml
             for type in "${types[@]}"; do
                 local name_list=()
-                name_list+=($(kubectl get $type -n $namespace --no-headers=true -o custom-columns=NAME:.metadata.name | grep -v 'kube-root-ca.crt'| grep -v 'kubernetes'))
+                name_list+=($(kubectl get $type -n $namespace --no-headers=true -o custom-columns=NAME:.metadata.name | grep -v 'kube-root-ca.crt'| grep -v 'kubernetes'| grep -v 'default'))
                 for name in "${name_list[@]}"; do
                     cloneAndModifyYaml "$type" "$namespace" "$DEST_KUBECONFIG" "$name"
                 done
@@ -280,6 +295,24 @@ done
 
 #Check environment before migration
 
+# 0.1. Check if the machine has installed yq
+
+if ! command -v yq &>/dev/null; then
+    if [[ $(uname) == "Darwin" ]]; then
+        echo "yq is not installed. Installing with Homebrew..."
+        brew install yq
+    else
+        echo "yq is not installed, and automatic installation is not supported on this platform. Please install yq manually."
+        exit 1
+    fi
+fi
+
+# 0.2. Check if /tmp/clone folder exists, if not, create it
+
+if [ ! -d "/tmp/clone" ]; then
+    mkdir -p "/tmp/clone"
+fi
+
 # 1. Check if clusters exist 
 
 # 1.1 Check if -s and -d are input
@@ -298,37 +331,66 @@ else
         exit 1
     fi
     #get dest cluster config file: used to connect destination host
-    kubectl config use-context $DEST_KUBECONFIG
-    kubectl config view --raw > "$DEST_KUBECONFIG-config.yaml"
+
+    # TODO:USE config yaml file to connect another machine
+    # kubectl config use-context $DEST_KUBECONFIG
+    # kubectl config view --raw > "$DEST_KUBECONFIG-config.yaml"
 fi
 
 # 2. Has -n, check if namespaces exist in source/dest cluster
-if [[$has_NAMESPACE]]; then
-    for ns in "${NAMESPACES[@]}"; do
-        # source
+
+for ns in "${NAMESPACES[@]}"; do
+    # source
+    if $has_NAMESPACE ; then
         if ! kubectl get namespace "$ns" --context="$SRC_KUBECONFIG" 2>/dev/null; then
         echo "Namespace $namespace does not exist in the source cluster. Check below"
         kubectl get namespace --context="$SRC_KUBECONFIG"
         exit 1
         fi
         # destination
-        checkNamespace "$ns"
-    done
-fi
+    fi
+    checkNamespace "$ns"
+done
+
 
 # 3. Check if objects exist in source namespace/cluster
-if [[ $has_OBJECTS ]]; then
+if [[ "$has_OBJECTS" == true ]]; then
     for obj in "${OBJECTS[@]}"; do
-        local object_found=false  # Flag to track if the object is found in any namespace
+        object_found=false  # Flag to track if the object is found in any namespace
         for ns in "${NAMESPACES[@]}"; do
-            if kubectl get "$obj" -n "$ns" --context="$SRC_KUBECONFIG" 2>/dev/null; then
+            object_list=($(kubectl get "$obj" -n "$ns" --context="$SRC_KUBECONFIG" --no-headers=true -o custom-columns=NAME:.metadata.name | grep -v 'kubernetes'| grep -v 'kube-root-ca.crt'| grep -v 'default'))
+            if [ ${#object_list[@]} -gt 0 ]; then
                 echo "Object $obj exists in namespace: $ns"
                 object_found=true
                 break
             fi
         done
-        if [ "$object_found" = false ]; then
+        if [ "$object_found" == false ]; then
             echo "Object $obj does not exist in any of the specified namespaces."
+            exit 1
+        fi
+    done
+fi
+
+# 4. Check if labels exist in source namespace/cluster
+if [[ "$has_LABELS" == true ]]; then
+    for label in "${LABELS[@]}"; do
+        label_found=false  # Flag to track if the label is found in any namespace
+        for ns in "${NAMESPACES[@]}"; do
+            for type in "${types[@]}"; do
+                label_list=($(kubectl get "$type" -n "$ns" -l "$label" --context="$SRC_KUBECONFIG" --no-headers=true -o custom-columns=NAME:.metadata.name | grep -v 'kubernetes'| grep -v 'kube-root-ca.crt'| grep -v 'default'))
+                if [ ${#label_list[@]} -gt 0 ]; then
+                    echo "Label $label exists in namespace: $ns"
+                    label_found=true
+                    break
+                fi
+            done
+            if [ "$label_found" == true ]; then
+                break
+            fi
+        done
+        if [ "$label_found" == false ]; then
+            echo "Object $label does not exist in any of the specified namespaces."
             exit 1
         fi
     done
@@ -337,7 +399,7 @@ fi
 
 #---------------- Environment Check Done ----------------
 
-types=("persistentvolumes" "configmaps" "secret" "pods" "deployment" "service" "replicasets" "statefulsets" "daemonsets")
+types=("serviceaccount" "persistentvolumes" "configmaps" "secret" "pods" "deployment" "service" "statefulsets" "daemonsets")
 
 # apply order must be: "persistentvolumes" "configmaps" "secret" "pods" "deployment" "service" "replicasets" "statefulsets" "daemonsets"
 if [[ $ALL ]] ; then
@@ -356,3 +418,4 @@ fi
 
 combination
 
+# ask user to delete the /tmp/clone file
