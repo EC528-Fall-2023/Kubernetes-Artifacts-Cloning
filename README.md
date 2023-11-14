@@ -107,7 +107,7 @@ Overall, this seamless method of copying and pasting a Kubernetes object will pr
      Example: kubectl -s source_cluster -d destination_cluster --all -n namespace
 ---
 ## Reach Goal
-**A Kubectl plugin that can clone user-specified object/namespace/label/single object from given source cluster to the destination cluster**
+**A Kubectl plugin that can clone user-specified object/namespace/label/single object from given source cluster to the destination cluster as well as actual data migration.**
 ```bash
 kubectl clone
   -s/--source <KUBECONFIG_SRC_CLUSTER>
@@ -148,7 +148,7 @@ Example:
    3. Get all dependencies of a specific object inside a cluster
 - ### Fifth Sprint:
    1. Performance analysis of kubectl clone
-   2. 2. Use Velereo to migrate PVC Data
+   2. Use Velereo to migrate PVC Data
    3. Finalize kubectl clone plugin reach goals
  
 ---
