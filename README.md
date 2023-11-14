@@ -42,9 +42,7 @@ Overall, this seamless method of copying and pasting a Kubernetes object will pr
 
 ---
 ## Solution Architecture:
-<img width="507" alt="Solution Architecture Image" src="https://github.com/EC528-Fall-2023/Kubernetes-Artifacts-Cloning/assets/36748450/225d3198-38f1-4fdd-acfe-5ec40c9481ab">
-
-
+![alt text](https://github.com/EC528-Fall-2023/Kubernetes-Artifacts-Cloning/blob/main/solution%20structure.jpg "Structure for the solution")
 
 ---
 ## Solution Concept:
@@ -88,6 +86,7 @@ Overall, this seamless method of copying and pasting a Kubernetes object will pr
      - Pods
      - Services
      - Persistent Volumes
+     - Persistent Volume Chains
      - Namespaces
      - Deployments
      - ReplicaSets
@@ -138,13 +137,13 @@ Example:
        - Implement namespace selector flag of kubectl clone
        - Implement label selector flag of kubectl clone
 - ### Fourth Sprint:
-   1. Get objects from ETCD snapshot
-   2. Compare querying object between etcd & kubernetes api
-   3. Test kubectl clone with different cases
-   4. Get dependencies of specific cluster
+   1. Debug and finalize Clone Utility MVP
+   2. Test kubectl clone with different edge cases and input validation
+   3. Get all dependencies of a specific object inside a cluster
 - ### Fifth Sprint:
    1. Performance analysis of kubectl clone
-   2. Finalize kubectl clone plugin
+   2. 2. Use Velereo to migrate PVC Data
+   3. Finalize kubectl clone plugin reach goals
  
 ---
 ## Terminology:
