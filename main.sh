@@ -2,6 +2,9 @@
 
 # This script acts as a kubectl plugin for cloning Kubernetes objects
 
+#In the future, the resource type is defined by the dependency graph within the source cluster.
+types=("serviceaccount" "persistentvolumes" "configmaps" "secret" "pods" "deployment" "service" "statefulsets" "daemonsets")
+
 function usage() {
     echo "Usage: kubectl clone [OPTIONS]"
     echo
@@ -250,6 +253,7 @@ while [[ "$#" -gt 0 ]]; do
                 LABELS+=("$1")
                 shift
             done
+	    echo $LABELS
             ;;
         -o|--objects) 
 	    require_arg "$1" "$2"
@@ -274,6 +278,8 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 check_filter
+#testing
+#echo $has_NAMESPACE, $has_LABELS, $has_OBJECTS
 
 echo "source: $SRC_KUBECONFIG"
 echo "destination: $DEST_KUBECONFIG"
@@ -371,11 +377,15 @@ fi
 
 # 4. Check if labels exist in source namespace/cluster
 if [[ "$has_LABELS" == true ]]; then
+    echo "check Labels"
     for label in "${LABELS[@]}"; do
         label_found=false  # Flag to track if the label is found in any namespace
         for ns in "${NAMESPACES[@]}"; do
+	    echo $ns
             for type in "${types[@]}"; do
+		echo $type    
                 label_list=($(kubectl get "$type" -n "$ns" -l "$label" --context="$SRC_KUBECONFIG" --no-headers=true -o custom-columns=NAME:.metadata.name | grep -v 'kubernetes'| grep -v 'kube-root-ca.crt'| grep -v 'default'))
+		echo $label_list
                 if [ ${#label_list[@]} -gt 0 ]; then
                     echo "Label $label exists in namespace: $ns"
                     label_found=true
@@ -397,7 +407,7 @@ fi
 #---------------- Environment Check Done ----------------
 
 #In the future, the resource type is defined by the dependency graph within the source cluster.
-types=("serviceaccount" "persistentvolumes" "configmaps" "secret" "pods" "deployment" "service" "statefulsets" "daemonsets")
+#types=("serviceaccount" "persistentvolumes" "configmaps" "secret" "pods" "deployment" "service" "statefulsets" "daemonsets")
 
 # apply order must be: "persistentvolumes" "configmaps" "secret" "pods" "deployment" "service" "replicasets" "statefulsets" "daemonsets"
 if [[ $ALL ]] ; then
