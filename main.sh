@@ -24,9 +24,9 @@ function usage() {
 # Check if the namespace exists in target cluster, if not, create it.
 function checkNamespace() {
     local namespace="$1"
-    if ! kubectl get namespace "$namespace" --context="$DEST_KUBECONFIG" 2>/dev/null; then
+    if ! kubectl get namespace "$namespace" --kubeconfig "/tmp/clone/$DEST_KUBECONFIG-config.yaml" 2>/dev/null; then
         echo "Namespace $namespace does not exist in the target cluster. Creating..."
-        if kubectl create namespace "$namespace" --context="$DEST_KUBECONFIG"; then
+        if kubectl create namespace "$namespace" --kubeconfig "/tmp/clone/$DEST_KUBECONFIG-config.yaml"; then
             echo "Namespace $namespace created."
         else
             echo "Failed to create namespace $namespace."
@@ -68,7 +68,7 @@ function cloneAndModifyYaml() {
     local output_file_list=()
 
     # Check if the resource exists in the source namespace
-    if ! kubectl get "$resource_type" -n "$namespace" --context="$SRC_KUBECONFIG" 2>/dev/null; then
+    if ! kubectl get "$resource_type" -n "$namespace" --kubeconfig "/tmp/clone/$SRC_KUBECONFIG-config.yaml" 2>/dev/null; then
         echo "Resource: $resource_type not exist in $SRC_KUBECONFIG"
         return
     fi
@@ -85,9 +85,9 @@ function cloneAndModifyYaml() {
 
     for n in "${names[@]}"; do
         local resource_exists=false
-        if kubectl get "$resource_type" "$n" -n "$namespace" --context="$dest_cluster" &>/dev/null; then
+        if kubectl get "$resource_type" "$n" -n "$namespace" --kubeconfig "/tmp/clone/$DEST_KUBECONFIG-config.yaml" &>/dev/null; then
             # exist -> delete
-            kubectl delete "$resource_type" "$n" -n "$namespace" --context="$dest_cluster"
+            kubectl delete "$resource_type" "$n" -n "$namespace" --kubeconfig "/tmp/clone/$DEST_KUBECONFIG-config.yaml"
             resource_exists=true
         fi
 
@@ -336,8 +336,10 @@ else
     #get dest cluster config file: used to connect destination host
 
     # TODO:USE config yaml file to connect another machine
-    # kubectl config use-context $DEST_KUBECONFIG
-    # kubectl config view --raw > "$DEST_KUBECONFIG-config.yaml"
+    kubectl config use-context $SRC_KUBECONFIG
+    kubectl config view --raw > "/tmp/clone/$SRC_KUBECONFIG-config.yaml"
+    kubectl config use-context $DEST_KUBECONFIG
+    kubectl config view --raw > "/tmp/clone/$DEST_KUBECONFIG-config.yaml"
 fi
 
 # 2. Has -n, check if namespaces exist in source/dest cluster
@@ -345,9 +347,9 @@ fi
 for ns in "${NAMESPACES[@]}"; do
     # source
     if $has_NAMESPACE ; then
-        if ! kubectl get namespace "$ns" --context="$SRC_KUBECONFIG" 2>/dev/null; then
+        if ! kubectl get namespace "$ns" --kubeconfig "/tmp/clone/$SRC_KUBECONFIG-config.yaml" 2>/dev/null; then
         echo "Namespace $namespace does not exist in the source cluster. Check below"
-        kubectl get namespace --context="$SRC_KUBECONFIG"
+        kubectl get namespace --kubeconfig "/tmp/clone/$SRC_KUBECONFIG-config.yaml"
         exit 1
         fi
         # destination
@@ -361,7 +363,7 @@ if [[ "$has_OBJECTS" == true ]]; then
     for obj in "${OBJECTS[@]}"; do
         object_found=false  # Flag to track if the object is found in any namespace
         for ns in "${NAMESPACES[@]}"; do
-            object_list=($(kubectl get "$obj" -n "$ns" --context="$SRC_KUBECONFIG" --no-headers=true -o custom-columns=NAME:.metadata.name | grep -v 'kubernetes'| grep -v 'kube-root-ca.crt'| grep -v 'default'))
+            object_list=($(kubectl get "$obj" -n "$ns" --kubeconfig "/tmp/clone/$SRC_KUBECONFIG-config.yaml" --no-headers=true -o custom-columns=NAME:.metadata.name | grep -v 'kubernetes'| grep -v 'kube-root-ca.crt'| grep -v 'default'))
             if [ ${#object_list[@]} -gt 0 ]; then
                 echo "Object $obj exists in namespace: $ns"
                 object_found=true
@@ -384,7 +386,7 @@ if [[ "$has_LABELS" == true ]]; then
 	    echo $ns
             for type in "${types[@]}"; do
 		echo $type    
-                label_list=($(kubectl get "$type" -n "$ns" -l "$label" --context="$SRC_KUBECONFIG" --no-headers=true -o custom-columns=NAME:.metadata.name | grep -v 'kubernetes'| grep -v 'kube-root-ca.crt'| grep -v 'default'))
+                label_list=($(kubectl get "$type" -n "$ns" -l "$label" --kubeconfig "/tmp/clone/$SRC_KUBECONFIG-config.yaml" --no-headers=true -o custom-columns=NAME:.metadata.name | grep -v 'kubernetes'| grep -v 'kube-root-ca.crt'| grep -v 'default'))
 		echo $label_list
                 if [ ${#label_list[@]} -gt 0 ]; then
                     echo "Label $label exists in namespace: $ns"
@@ -427,4 +429,9 @@ fi
 combination
 
 # ask user to delete the tmp file
+echo "Do you want to delete the yaml file? (y/n)"
+read answer
 
+if [ "$answer" = "y" ] || [ "$answer" = "Y" ]; then
+    rm /tmp/clone/*.yaml
+fi
