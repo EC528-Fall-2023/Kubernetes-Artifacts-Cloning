@@ -1,5 +1,6 @@
 import yaml
 
+#Does not yet handle DaemonSets outside of namespace
 def findLabels(kubeObj, target_labels):
     matching_objects = []
     for obj in kubeObj:
