@@ -7,7 +7,7 @@ def findLabels(kubeObj, target_labels):
         labels = {}
         if obj['kind'] == 'Service':
             labels = obj['spec'].get('selector', {})
-        elif obj['kind'] == 'Deployment' or obj['kind'] == 'StatefulSet' or obj['kind'] == 'DaemonSet':
+        elif obj['kind'] == 'Deployment' or obj['kind'] == 'StatefulSet' or obj['kind'] == 'DaemonSet' or obj['kind'] == "ReplicaSet":
             labels = obj['spec']['selector'].get('matchLabels', {})
             
         if any(target_labels.get(key) == labels.get(key) for key in target_labels):
@@ -47,6 +47,7 @@ def podDependencies(podObj, kubeObj):
     print("\nAssociated Obj:")
     print(findLabels(kubeObj, labels))
     print("----------------------------------")
+    
 def extractObj(file_path):
     try:
         with open(file_path, 'r') as file:
