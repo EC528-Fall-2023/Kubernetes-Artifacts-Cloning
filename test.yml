@@ -1,0 +1,155 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+  labels:
+    app: myapp
+spec:
+  ports:
+  - port: 80
+    name: web
+  selector:
+    app: myapp
+    component: frontend
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-one
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: myapp
+      component: frontend
+  template:
+    metadata:
+      labels:
+        app: myapp
+        component: frontend
+    spec:
+      containers:
+      - name: nginx-container
+        image: nginx:latest
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-two
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: myapp
+      component: backend
+  template:
+    metadata:
+      labels:
+        app: myapp
+        component: backend
+    spec:
+      containers:
+      - name: busybox-container
+        image: busybox
+        command: ['sh', '-c', 'echo Hello Kubernetes! && sleep 3600']
+
+---
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: my-statefulset
+spec:
+  serviceName: "my-service"
+  replicas: 3
+  selector:
+    matchLabels:
+      app: myapp
+      tier: backend
+  template:
+    metadata:
+      labels:
+        app: myapp
+        tier: backend
+    spec:
+      containers:
+      - name: nginx-container
+        image: nginx:latest
+
+---
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: connected-pod
+  labels:
+    app: myapp
+    component: frontend
+spec:
+  containers:
+  - name: nginx-container
+    image: nginx:latest
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-3
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: myapp3234
+      component: frontend23423
+  template:
+    metadata:
+      labels:
+        app: myapp3234
+        component: frontend23423
+    spec:
+      containers:
+      - name: nginx-container
+        image: nginx:latest
+
+
+---
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nginx-daemonset
+  labels:
+    app: nginx
+spec:
+  selector:
+    matchLabels:
+      name: nginx
+  template:
+    metadata:
+      labels:
+        name: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+
+---
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+  labels:
+    name: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx:latest
+    ports:
+    - containerPort: 80
