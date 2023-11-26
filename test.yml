@@ -153,3 +153,162 @@ spec:
     image: nginx:latest
     ports:
     - containerPort: 80
+
+---
+
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: example-replicaset
+  labels:
+    app: myapp
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+      - name: nginx-container
+        image: nginx:latest
+
+---
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+  labels:
+    app: myapp 
+spec:
+  containers:
+  - name: nginx-container
+    image: nginx:latest
+
+---
+  kind: Pod
+  metadata:
+    creationTimestamp: "2023-11-13T16:31:58Z"
+    generateName: cart-dd947f945-
+    labels:
+      pod-template-hash: dd947f945
+      service: cart
+    name: cart-dd947f945-v6pww
+    namespace: robot-shop
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: ReplicaSet
+      name: cart-dd947f945
+      uid: 880f24e3-fedd-4126-821f-62e26ddd9be4
+    resourceVersion: "1023737"
+    uid: 9f76db21-04bc-4a86-b1a5-0fe34d357fd8
+  spec:
+    containers:
+    - env:
+      - name: INSTANA_AGENT_HOST
+        valueFrom:
+          fieldRef:
+            apiVersion: v1
+            fieldPath: status.hostIP
+      image: robotshop/rs-cart:latest
+      imagePullPolicy: IfNotPresent
+      name: cart
+      ports:
+      - containerPort: 8080
+        protocol: TCP
+      resources:
+        limits:
+          cpu: 200m
+          memory: 100Mi
+        requests:
+          cpu: 100m
+          memory: 50Mi
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      volumeMounts:
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-jcg6x
+        readOnly: true
+    dnsPolicy: ClusterFirst
+    enableServiceLinks: true
+    nodeName: minikube
+    preemptionPolicy: PreemptLowerPriority
+    priority: 0
+    restartPolicy: Always
+    schedulerName: default-scheduler
+    securityContext: {}
+    serviceAccount: default
+    serviceAccountName: default
+    terminationGracePeriodSeconds: 30
+    tolerations:
+    - effect: NoExecute
+      key: node.kubernetes.io/not-ready
+      operator: Exists
+      tolerationSeconds: 300
+    - effect: NoExecute
+      key: node.kubernetes.io/unreachable
+      operator: Exists
+      tolerationSeconds: 300
+    volumes:
+    - name: kube-api-access-jcg6x
+      projected:
+        defaultMode: 420
+        sources:
+        - serviceAccountToken:
+            expirationSeconds: 3607
+            path: token
+        - configMap:
+            items:
+            - key: ca.crt
+              path: ca.crt
+            name: kube-root-ca.crt
+        - downwardAPI:
+            items:
+            - fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+              path: namespace
+  status:
+    conditions:
+    - lastProbeTime: null
+      lastTransitionTime: "2023-11-13T16:31:58Z"
+      status: "True"
+      type: Initialized
+    - lastProbeTime: null
+      lastTransitionTime: "2023-11-13T16:32:03Z"
+      status: "True"
+      type: Ready
+    - lastProbeTime: null
+      lastTransitionTime: "2023-11-13T16:32:03Z"
+      status: "True"
+      type: ContainersReady
+    - lastProbeTime: null
+      lastTransitionTime: "2023-11-13T16:31:58Z"
+      status: "True"
+      type: PodScheduled
+    containerStatuses:
+    - containerID: docker://da34a754cfc7e399065a8fdb3b399d786f1debe6f2de687d39919a5eaf0dd753
+      image: robotshop/rs-cart:latest
+      imageID: docker-pullable://robotshop/rs-cart@sha256:388349d5cb3ccc14a192c345bfd42596920737db35d6a03a27457f6682710a37
+      lastState: {}
+      name: cart
+      ready: true
+      restartCount: 0
+      started: true
+      state:
+        running:
+          startedAt: "2023-11-13T16:32:01Z"
+    hostIP: 192.168.49.2
+    phase: Running
+    podIP: 10.244.0.27
+    podIPs:
+    - ip: 10.244.0.27
+    qosClass: Burstable
+    startTime: "2023-11-13T16:31:58Z"
+    
