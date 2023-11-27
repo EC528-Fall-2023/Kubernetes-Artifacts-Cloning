@@ -1,24 +1,32 @@
 import yaml
 
-#Does not yet handle DaemonSets outside of namespace
+
+# Does not yet handle DaemonSets outside of namespace
 def findLabels(kubeObj, target_labels):
     matching_objects = []
     for obj in kubeObj:
         labels = {}
         if obj['kind'] == 'Service':
             labels = obj['spec'].get('selector', {})
-        elif obj['kind'] == 'Deployment' or obj['kind'] == 'StatefulSet' or obj['kind'] == 'DaemonSet' or obj['kind'] == "ReplicaSet":
+        elif obj['kind'] == 'Deployment' or obj['kind'] == 'StatefulSet' or obj['kind'] == 'DaemonSet' or obj[
+            'kind'] == "ReplicaSet":
             labels = obj['spec']['selector'].get('matchLabels', {})
-            
+
         if any(target_labels.get(key) == labels.get(key) for key in target_labels):
             matching_objects.append([obj['kind'], obj['metadata']['name'], labels])
 
-    #we can also return the obj yaml directly
+    # we can also return the obj yaml directly
     return matching_objects
 
-def higherLevel(obj):  # Deployment, StatefulSet, DaemonSet
-    objDep = []
-    if 'spec' in obj and 'template' in obj['spec'] and 'spec' in obj['spec']['template'] and 'containers' in obj['spec']['template']['spec']:
+def higherLevel(obj,kubeObj):  # Deployment, StatefulSet, DaemonSet
+    dependencies = {"Secrets": [], "ConfigMaps": [], "AssociatedObjects": []}
+    labels = obj['metadata'].get('labels', {})
+
+    associated_objs = findLabels(kubeObj, labels)
+    dependencies["AssociatedObjects"] = associated_objs
+
+    if 'spec' in obj and 'template' in obj['spec'] and 'spec' in obj['spec']['template'] and 'containers' in \
+            obj['spec']['template']['spec']:
         containers = obj['spec']['template']['spec']['containers']
         for container in containers:
             if 'env' in container:
@@ -26,62 +34,74 @@ def higherLevel(obj):  # Deployment, StatefulSet, DaemonSet
                     if 'valueFrom' in env_var:
                         if 'secretKeyRef' in env_var['valueFrom']:
                             ref_name = env_var['valueFrom']['secretKeyRef'].get('name', 'Unknown')
-                            objDep.append(['Secret', ref_name])
+                            dependencies["Secrets"].append(ref_name)
                         elif 'configMapKeyRef' in env_var['valueFrom']:
                             ref_name = env_var['valueFrom']['configMapKeyRef'].get('name', 'Unknown')
-                            objDep.append(['ConfigMap', ref_name])
-    return objDep
-
-
+                            dependencies["ConfigMaps"].append(ref_name)
+    return dependencies
 
 
 def podDependencies(podObj, kubeObj):
-    podName = podObj['metadata'].get('name', "")
-    ns = podObj['metadata'].get('namespace', "default")
-    config_maps, secrets, pvcs = [], [], []
     labels = podObj['metadata'].get('labels', {})
+    associated_objs = findLabels(kubeObj, labels)
+    dependencies = {
+        "ConfigMaps": [],
+        "Secrets": [],
+        "PersistentVolumes": [],
+        "PVCs": [],
+        "AssociatedObjects": associated_objs
+    }
 
     if 'volumes' in podObj['spec']:
         for volume in podObj['spec']['volumes']:
             if 'configMap' in volume:
-                config_maps.append(volume['configMap']['name'])
+                dependencies["ConfigMaps"].append(volume['configMap']['name'])
             if 'secret' in volume:
-                secrets.append(volume['secret']['secretName'])
+                dependencies["Secrets"].append(volume['secret']['secretName'])
             if 'persistentVolumeClaim' in volume:
-                pvcs.append(volume['persistentVolumeClaim']['claimName'])
+                dependencies["PVCs"].append(volume['persistentVolumeClaim']['claimName'])
 
-    persistent_volumes = []
     if 'containers' in podObj['spec'] and 'volumeMounts' in podObj['spec']['containers'][0]:
-        persistent_volumes = [volume_mount['name'] for volume_mount in podObj['spec']['containers'][0]['volumeMounts']]
+        dependencies["PersistentVolumes"] = [volume_mount['name'] for volume_mount in
+                                             podObj['spec']['containers'][0]['volumeMounts']]
 
-    print("Pod name:", podName)
-    print("Namespace:", ns)
-    print("Dependencies for Pod:\n")
-    print("Config maps: ", config_maps)
-    print("Secrets: ", secrets)
-    print("Persistent volumes: ", persistent_volumes)
-    print("PVCs: ", pvcs)
-    print("Labels: ", labels)
-    print("\nAssociated Obj:")
-    print(findLabels(kubeObj, labels))
-    print("----------------------------------")
-    
-def writeToYAML(kube_objs, env_vars_list, output_file):
-    matching_objs = []
+    return dependencies
 
-    for obj in kube_objs:
-        kind = obj.get('kind', '')
-        name = obj['metadata'].get('name')
+def pvDependencies(pvObj, kubeObj):
+    labels = pvObj['metadata'].get('labels', {})
+    associated_objs = findLabels(kubeObj, labels)
 
-        for env_var_list in env_vars_list:
-            if env_var_list[0] == kind and env_var_list[1] == name:
-                matching_objs.append(obj)
-                break
+    return {
+        "AssociatedObjects": associated_objs
+    }
+
+def pvcDependencies(pvcObj, kubeObj):
+    labels = pvcObj['metadata'].get('labels', {})
+    associated_objs = findLabels(kubeObj, labels)
+
+    return {
+        "AssociatedObjects": associated_objs
+    }
+
+
+def replicasetDependencies(rsObj, kubeObj):
+    labels = rsObj['metadata'].get('labels', {})
+    selector = rsObj['spec'].get('selector', {}).get('matchLabels', {})
+    associated_objs = findLabels(kubeObj, selector)
+
+    return {
+        "Selector": selector,
+        "AssociatedObjects": associated_objs
+    }
+
+
+def writeToYAML(dependencies, output_file):
     try:
-        with open(output_file, 'a') as file:
-            yaml.dump_all(matching_objs, file)
+        with open(output_file, 'w') as file:
+            yaml.dump(dependencies, file)
     except Exception as e:
         print(f"An error occurred while writing to the file: {e}")
+
 
 def extractObj(file_path):
     try:
@@ -99,16 +119,33 @@ def extractObj(file_path):
     except Exception as e:
         print(f"An error occurred: {e}")
         return []
-    
+
+def findDependenciesByResourceName(kubeObj, resource_name, resource_type):
+
+    for obj in kubeObj:
+
+        if obj['kind'] == resource_type and obj['metadata'].get('name') == resource_name:
+            if resource_type == "Pod":
+                return podDependencies(obj, kubeObj)
+            elif resource_type == "ReplicaSet":
+                return replicasetDependencies(obj, kubeObj)
+            elif resource_type == "PersistentVolume":
+                return pvDependencies(obj, kubeObj)
+            elif resource_type == "PersistentVolumeClaim":
+                return pvcDependencies(obj, kubeObj)
+            elif resource_type in ["Deployment", "StatefulSet", "DaemonSet"]:
+                return higherLevel(obj,kubeObj)
+    return {}
+
 def maintTest():
     kubeObj = extractObj("test.yml")
-    for obj in kubeObj:
-        kind = obj['kind']
-        #if kind == "Pod":
-            #podDependencies(obj, kubeObj)
-        if kind == "Deployment":
-            print(higherLevel(obj))
-            writeToYAML(kubeObj, higherLevel(obj), "yolo.yml")
-    
+    resource_name = input("Enter resource name: ")
+    resource_type = input("Enter resource type: ")
+
+    dependencies = findDependenciesByResourceName(kubeObj, resource_name, resource_type)
+    print(dependencies)
+    writeToYAML(dependencies, "dependencies_output.yaml")
+
+
 if __name__ == "__main__":
     maintTest()
