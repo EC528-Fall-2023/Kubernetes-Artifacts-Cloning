@@ -35,6 +35,28 @@ function checkNamespace() {
     fi
 }
 
+# Create namespace's yaml file
+function manageNamespace() {
+    if [ "$#" -ne 1 ]; then
+        echo "Usage: $0 <namespace>"
+        exit 1
+    fi 
+    local NAMESPACE="$1"
+    local resultFile="/tmp/clone/$NAMESPACE-info.yaml"
+    # Delete result File if it presents
+    if  [ -f "$resultFile"  ]; then
+         rm "$resultFile"
+    fi
+    local fileList=($(ls /tmp/clone | grep $NAMESPACE | grep -v info))
+    local total_files=${#fileList[@]}
+    for (( i=0; i<total_files; i++  )); do
+        file=${fileList[$i]}
+        cat "/tmp/clone/$file"
+        if [ $((i + 1)) -lt $total_files  ]; then
+	echo -e "\n---\n"
+        fi
+    done >> $resultFile
+}
 
 function switchCluster() {
     local CLUSTER_CONTEXT="$1"
@@ -98,7 +120,8 @@ function cloneAndModifyYaml() {
             > "/tmp/clone/${namespace}_${n}_modified.yaml"
             # Modify service YAML
             yq eval 'del(.spec.ports[0].nodePort) | del(.spec.clusterIPs) | del(.spec.clusterIP)' "/tmp/clone/${namespace}_${n}.yaml" > "/tmp/clone/${namespace}_${n}_modified.yaml"
-            kubectl apply -f "/tmp/clone/${namespace}_${n}_modified.yaml" --kubeconfig="$DEST_KUBECONFIG" -n "$namespace" 
+            kubectl apply -f "/tmp/clone/${namespace}_${n}_modified.yaml" --kubeconfig="$DEST_KUBECONFIG" -n "$namespace"
+	    rm "/tmp/clone/${namespace}_${n}.yaml" #delete the original service yaml file 
         else
             # Apply other YAMLs directly
             kubectl apply -f "/tmp/clone/${namespace}_${n}.yaml" --kubeconfig="$DEST_KUBECONFIG" -n "$namespace" 
@@ -437,10 +460,11 @@ if [ "$answer" = "y" ] || [ "$answer" = "Y" ]; then
 fi
 
 # ask user to shut down the node
+# need to test
 echo "Do you want to shut down the cluster? (y/n)"
-read answer
+read shutdown
 
-if [ "$answer" = "y" ] || [ "$answer" = "Y" ]; then
+if [ "$shutdown" = "y" ] || [ "$shutdown" = "Y" ]; then
 	nodes=$(kubectl get nodes -o name)
 	for node in ${nodes[@]}
 	do
