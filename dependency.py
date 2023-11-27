@@ -16,6 +16,24 @@ def findLabels(kubeObj, target_labels):
     #we can also return the obj yaml directly
     return matching_objects
 
+def higherLevel(obj):  # Deployment, StatefulSet, DaemonSet
+    objDep = []
+    if 'spec' in obj and 'template' in obj['spec'] and 'spec' in obj['spec']['template'] and 'containers' in obj['spec']['template']['spec']:
+        containers = obj['spec']['template']['spec']['containers']
+        for container in containers:
+            if 'env' in container:
+                for env_var in container['env']:
+                    if 'valueFrom' in env_var:
+                        if 'secretKeyRef' in env_var['valueFrom']:
+                            ref_name = env_var['valueFrom']['secretKeyRef'].get('name', 'Unknown')
+                            objDep.append(['Secret', ref_name])
+                        elif 'configMapKeyRef' in env_var['valueFrom']:
+                            ref_name = env_var['valueFrom']['configMapKeyRef'].get('name', 'Unknown')
+                            objDep.append(['ConfigMap', ref_name])
+    return objDep
+
+
+
 
 def podDependencies(podObj, kubeObj):
     podName = podObj['metadata'].get('name', "")
@@ -48,6 +66,23 @@ def podDependencies(podObj, kubeObj):
     print(findLabels(kubeObj, labels))
     print("----------------------------------")
     
+def writeToYAML(kube_objs, env_vars_list, output_file):
+    matching_objs = []
+
+    for obj in kube_objs:
+        kind = obj.get('kind', '')
+        name = obj['metadata'].get('name')
+
+        for env_var_list in env_vars_list:
+            if env_var_list[0] == kind and env_var_list[1] == name:
+                matching_objs.append(obj)
+                break
+    try:
+        with open(output_file, 'a') as file:
+            yaml.dump_all(matching_objs, file)
+    except Exception as e:
+        print(f"An error occurred while writing to the file: {e}")
+
 def extractObj(file_path):
     try:
         with open(file_path, 'r') as file:
@@ -69,12 +104,11 @@ def maintTest():
     kubeObj = extractObj("test.yml")
     for obj in kubeObj:
         kind = obj['kind']
-        if kind == "Pod":
-            podDependencies(obj, kubeObj)
+        #if kind == "Pod":
+            #podDependencies(obj, kubeObj)
+        if kind == "Deployment":
+            print(higherLevel(obj))
+            writeToYAML(kubeObj, higherLevel(obj), "yolo.yml")
     
 if __name__ == "__main__":
     maintTest()
-
-
-    # need to find statefulset
-    # need to check for replicasts
