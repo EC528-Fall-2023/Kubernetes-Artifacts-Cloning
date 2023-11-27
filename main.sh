@@ -435,3 +435,16 @@ read answer
 if [ "$answer" = "y" ] || [ "$answer" = "Y" ]; then
     rm /tmp/clone/*.yaml
 fi
+
+# ask user to shut down the node
+echo "Do you want to shut down the cluster? (y/n)"
+read answer
+
+if [ "$answer" = "y" ] || [ "$answer" = "Y" ]; then
+	nodes=$(kubectl get nodes -o name)
+	for node in ${nodes[@]}
+	do
+		echo "==== Shut down $node ===="
+		kubectl drain --ignore-daemonsets $node
+	done
+fi
