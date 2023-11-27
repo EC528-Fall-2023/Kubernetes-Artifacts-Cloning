@@ -1,5 +1,6 @@
+#!/usr/bin/env python3
+import sys
 import yaml
-
 
 # Does not yet handle DaemonSets outside of namespace
 def findLabels(kubeObj, target_labels):
@@ -121,31 +122,40 @@ def extractObj(file_path):
         return []
 
 def findDependenciesByResourceName(kubeObj, resource_name, resource_type):
-
+    resource_type_lower = resource_type.lower()
     for obj in kubeObj:
 
-        if obj['kind'] == resource_type and obj['metadata'].get('name') == resource_name:
-            if resource_type == "Pod":
+        if obj['kind'].lower() == resource_type_lower and obj['metadata'].get('name') == resource_name:
+            if resource_type_lower == "pod":
                 return podDependencies(obj, kubeObj)
-            elif resource_type == "ReplicaSet":
+            elif resource_type_lower == "replicaset":
                 return replicasetDependencies(obj, kubeObj)
-            elif resource_type == "PersistentVolume":
+            elif resource_type_lower == "persistentvolume":
                 return pvDependencies(obj, kubeObj)
-            elif resource_type == "PersistentVolumeClaim":
+            elif resource_type_lower == "persistentvolumevlaim":
                 return pvcDependencies(obj, kubeObj)
-            elif resource_type in ["Deployment", "StatefulSet", "DaemonSet"]:
+            elif resource_type_lower in ["deployment", "statefulset", "daemonset"]:
                 return higherLevel(obj,kubeObj)
     return {}
 
-def maintTest():
-    kubeObj = extractObj("test.yml")
-    resource_name = input("Enter resource name: ")
-    resource_type = input("Enter resource type: ")
-
+def maintTest(fileName,resource_name,resource_type):
+    kubeObj = extractObj(fileName)
     dependencies = findDependenciesByResourceName(kubeObj, resource_name, resource_type)
     print(dependencies)
     writeToYAML(dependencies, "dependencies_output.yaml")
 
 
 if __name__ == "__main__":
-    maintTest()
+    if len(sys.argv) != 4:
+        print("Usage: python script.py <file_name> <resource_name> <resource_type>")
+        sys.exit(1)
+
+    file_name = sys.argv[1]
+    resource_name = sys.argv[2]
+    resource_type = sys.argv[3]
+    maintTest(file_name, resource_name, resource_type)
+# if __name__ == "__main__":
+#     file_name=input("Enter file name: ")
+#     resource_name = input("Enter resource name: ")
+#     resource_type = input("Enter resource type: ")
+#     maintTest(file_name,resource_name,resource_type)
