@@ -312,3 +312,75 @@ spec:
     qosClass: Burstable
     startTime: "2023-11-13T16:31:58Z"
     
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+      - name: myapp-container
+        image: myapp:1.0
+        ports:
+        - containerPort: 80
+        env:
+          - name: CONFIG_1
+            valueFrom:
+              configMapKeyRef:
+                name: my-configmap-1
+                key: config_key_1
+          - name: CONFIG_2
+            valueFrom:
+              configMapKeyRef:
+                name: my-configmap-2
+                key: config_key_2
+          - name: SECRET_1
+            valueFrom:
+              secretKeyRef:
+                name: my-secret-1
+                key: secret_key_1
+          - name: SECRET_2
+            valueFrom:
+              secretKeyRef:
+                name: my-secret-2
+                key: secret_key_2
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-configmap-1
+data:
+  config_key_1: <your_value_here>
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-configmap-2
+data:
+  config_key_2: <your_value_here>
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-secret-1
+type: Opaque
+data:
+  secret_key_1: <base64_encoded_value>
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-secret-2
+type: Opaque
+data:
+  secret_key_2: <base64_encoded_value>
