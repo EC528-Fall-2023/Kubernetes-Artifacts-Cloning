@@ -26,6 +26,9 @@ Project Mentors:
 4. Sprint 4 Demo
   - Video: https://drive.google.com/file/d/14vOJKMWeUFISYpvTXTyU6z9B0jKTG4GD/view?usp=sharing
   - Slide: https://docs.google.com/presentation/d/1-Ov7xDmd_bAE6YLBiOw2xXWs8F-GsdqVh7idgD6a9QA/edit?usp=sharing
+5. Sprint 5 Demo
+  - Video: https://drive.google.com/file/d/19hDyxi9tkjuKPsTYhuMZqmsBGM3GJOWQ/view?usp=sharing
+  - Slide: https://docs.google.com/presentation/d/16kFlbbW4UtgqDe_5kSvygncAoa8n9rDRMb3C-6vc2wk/edit?usp=sharing
 
 ---
 
