@@ -2,6 +2,7 @@
 import sys
 import yaml
 
+
 # Does not yet handle DaemonSets outside of namespace
 def findLabels(kubeObj, target_labels):
     matching_objects = []
@@ -19,7 +20,8 @@ def findLabels(kubeObj, target_labels):
     # we can also return the obj yaml directly
     return matching_objects
 
-def higherLevel(obj,kubeObj):  # Deployment, StatefulSet, DaemonSet
+
+def higherLevel(obj, kubeObj):  # Deployment, StatefulSet, DaemonSet
     dependencies = {"Secrets": [], "ConfigMaps": [], "AssociatedObjects": []}
     labels = obj['metadata'].get('labels', {})
 
@@ -49,7 +51,7 @@ def podDependencies(podObj, kubeObj):
         "ConfigMaps": [],
         "Secrets": [],
         "PersistentVolumes": [],
-        "PVCs": [],
+        "PVC": [],
         "AssociatedObjects": associated_objs
     }
 
@@ -60,13 +62,14 @@ def podDependencies(podObj, kubeObj):
             if 'secret' in volume:
                 dependencies["Secrets"].append(volume['secret']['secretName'])
             if 'persistentVolumeClaim' in volume:
-                dependencies["PVCs"].append(volume['persistentVolumeClaim']['claimName'])
+                dependencies["PVC"].append(volume['persistentVolumeClaim']['claimName'])
 
     if 'containers' in podObj['spec'] and 'volumeMounts' in podObj['spec']['containers'][0]:
         dependencies["PersistentVolumes"] = [volume_mount['name'] for volume_mount in
                                              podObj['spec']['containers'][0]['volumeMounts']]
 
     return dependencies
+
 
 def pvDependencies(pvObj, kubeObj):
     labels = pvObj['metadata'].get('labels', {})
@@ -75,6 +78,7 @@ def pvDependencies(pvObj, kubeObj):
     return {
         "AssociatedObjects": associated_objs
     }
+
 
 def pvcDependencies(pvcObj, kubeObj):
     labels = pvcObj['metadata'].get('labels', {})
@@ -121,10 +125,10 @@ def extractObj(file_path):
         print(f"An error occurred: {e}")
         return []
 
+
 def findDependenciesByResourceName(kubeObj, resource_name, resource_type):
     resource_type_lower = resource_type.lower()
     for obj in kubeObj:
-
         if obj['kind'].lower() == resource_type_lower and obj['metadata'].get('name') == resource_name:
             if resource_type_lower == "pod":
                 return podDependencies(obj, kubeObj)
@@ -132,17 +136,40 @@ def findDependenciesByResourceName(kubeObj, resource_name, resource_type):
                 return replicasetDependencies(obj, kubeObj)
             elif resource_type_lower == "persistentvolume":
                 return pvDependencies(obj, kubeObj)
-            elif resource_type_lower == "persistentvolumevlaim":
+            elif resource_type_lower == "persistentvolumeclaim":
                 return pvcDependencies(obj, kubeObj)
             elif resource_type_lower in ["deployment", "statefulset", "daemonset"]:
-                return higherLevel(obj,kubeObj)
+                return higherLevel(obj, kubeObj)
     return {}
 
-def maintTest(fileName,resource_name,resource_type):
+
+def dependencies_format(dependencies):
+    result = {}
+    for key, value in dependencies.items():
+        if key == "AssociatedObjects":
+            for item in value:
+                type, resource_name = item[0:2]
+                resource_type = type.lower()
+                if resource_type not in result:
+                    result[resource_type] = set()
+                result[resource_type].add(resource_name)
+        elif value:
+            resource_key = key.lower()
+            if resource_key not in result:
+                result[resource_key] = set()
+            result[resource_key].update(value)
+
+    for key in result:
+        result[key] = list(result[key])
+    return result
+
+
+def maintTest(fileName, resource_name, resource_type):
     kubeObj = extractObj(fileName)
     dependencies = findDependenciesByResourceName(kubeObj, resource_name, resource_type)
     print(dependencies)
-    writeToYAML(dependencies, "dependencies_output.yaml")
+
+    writeToYAML(dependencies_format(dependencies), "/tmp/clone/dependencies_output.yaml")
 
 
 if __name__ == "__main__":
@@ -151,11 +178,14 @@ if __name__ == "__main__":
         sys.exit(1)
 
     file_name = sys.argv[1]
-    resource_name = sys.argv[2]
-    resource_type = sys.argv[3]
+    resource_type = sys.argv[2]
+    resource_name = sys.argv[3]
     maintTest(file_name, resource_name, resource_type)
+
+
 # if __name__ == "__main__":
-#     file_name=input("Enter file name: ")
+#     file_name = input("Enter file name: ")
 #     resource_name = input("Enter resource name: ")
 #     resource_type = input("Enter resource type: ")
-#     maintTest(file_name,resource_name,resource_type)
+#     maintTest(file_name, resource_name, resource_type)
+
