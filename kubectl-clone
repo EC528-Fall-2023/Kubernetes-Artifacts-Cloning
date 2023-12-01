@@ -335,6 +335,19 @@ if [ "$has_DEPENDENCIES" = true ] && [ "$has_NAMESPACE" != true ]; then
     exit 1
 fi
 
+if [ "$has_DEPENDENCIES" = true ] && [ "$has_NAMESPACE" = true ]; then
+    if [ "${#NAMESPACES[@]}" -gt 1 ]; then
+        echo "Error: Only one namespace is allowed when using -D/--dependency."
+        exit 1
+    fi
+    local found=($(kubectl get "$DE_TYPE" "$DE_NAME" -n "$NAMESPACES" --kubeconfig "$SRC_KUBECONFIG" --no-headers=true -o custom-columns=NAME:.metadata.name | grep -v 'kubernetes'| grep -v 'kube-root-ca.crt'| grep -v 'default'))
+    if [ ${#found[@]} -eq 0 ]; then
+        echo "Error: No resources found for $DE_TYPE $DE_NAME in namespace ${NAMESPACES[0]}."
+        exit 1
+    fi
+
+fi
+
 check_filter
 #testing
 #echo $has_NAMESPACE, $has_LABELS, $has_OBJECTS
