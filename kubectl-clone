@@ -84,7 +84,7 @@ function find_dependencies(){ # parameters: object name, namespace
         for resource_name in $resource_names; do
             echo "$resource_type:"
             echo " @@ $resource_name"
-            cloneAndModifyYaml "$resource_type" "$NAMESPACES" "$DEST_KUBECONFIG" "$resource_name"
+            cloneAndModifyYaml "$resource_type" "$NAMESPACES" "$DEST_KUBECONFIG" "$resource_name" "yes"
         done
     echo ""
     done
@@ -103,11 +103,13 @@ function get_all_namespaces() {
   echo "${valid_namespaces[@]}"
 }
 
+
 function cloneAndModifyYaml() {
     local resource_type="$1"
     local namespace="$2"
     local dest_cluster="$3"
     local resource_name="$4"
+    local apply="$5"
     local output_file_list=()
 
     # Check if the resource exists in the source namespace
@@ -135,27 +137,33 @@ function cloneAndModifyYaml() {
             resource_exists=true
         fi
 
-        > "/tmp/clone/${namespace}_${n}.yaml" # clear
-        kubectl get "$resource_type" "$n" --kubeconfig $SRC_KUBECONFIG -n "$namespace" -o yaml > "/tmp/clone/${namespace}_${n}.yaml"
+        > "/tmp/clone/${namespace}_${resource_type}_${n}.yaml" # clear
+        kubectl get "$resource_type" "$n" --kubeconfig $SRC_KUBECONFIG -n "$namespace" -o yaml > "/tmp/clone/${namespace}_${resource_type}_${n}.yaml"
 
         if [ "$resource_type" == "service" ]; then
-            > "/tmp/clone/${namespace}_${n}_modified.yaml"
+            > "/tmp/clone/${namespace}_${resource_type}_${n}_modified.yaml"
             # Modify service YAML
-            yq eval 'del(.spec.ports[0].nodePort) | del(.spec.clusterIPs) | del(.spec.clusterIP)' "/tmp/clone/${namespace}_${n}.yaml" > "/tmp/clone/${namespace}_${n}_modified.yaml"
-            kubectl apply -f "/tmp/clone/${namespace}_${n}_modified.yaml" --kubeconfig="$DEST_KUBECONFIG" -n "$namespace"
-        rm "/tmp/clone/${namespace}_${n}.yaml" #delete the original service yaml file 
+            yq eval 'del(.spec.ports[0].nodePort) | del(.spec.clusterIPs) | del(.spec.clusterIP)' "/tmp/clone/${namespace}_${resource_type}_${n}.yaml" > "/tmp/clone/${namespace}_${resource_type}_${n}_modified.yaml"
+	    if [ "$apply" == "yes"  ]; then
+            	kubectl apply -f "/tmp/clone/${namespace}_${resource_type}_${n}_modified.yaml" --kubeconfig="$DEST_KUBECONFIG" -n "$namespace"
+	    fi
+	    rm "/tmp/clone/${namespace}_${resource_type}_${n}.yaml" #delete the original service yaml file 
         else
             # Apply other YAMLs directly
-            kubectl apply -f "/tmp/clone/${namespace}_${n}.yaml" --kubeconfig="$DEST_KUBECONFIG" -n "$namespace" 
+	    if [ "$apply" == "yes"  ]; then
+		kubectl apply -f "/tmp/clone/${namespace}_${resource_type}_${n}.yaml" --kubeconfig="$DEST_KUBECONFIG" -n "$namespace" 
+	    fi
         fi
 
-        if [ "$resource_exists" = true ]; then
-            echo "$n already existed in the target cluster and has been replaced."
-        else
-            echo "$n migrated to the target cluster."
-        fi
+	if [ "$apply" == "yes"  ]; then
+	        if [ "$resource_exists" = true ]; then
+        	    echo "$n already existed in the target cluster and has been replaced."
+	        else
+        	    echo "$n migrated to the target cluster."
+	        fi
+	fi
 
-        output_file_list+=("/tmp/clone/${namespace}_${n}.yaml")
+        output_file_list+=("/tmp/clone/${namespace}_${resource_type}_${n}.yaml")
 
     done
 
@@ -197,11 +205,22 @@ function check_filter(){
 
 function require_arg() {
     local type="$1"
-    local value="$2"
-    if [[ -z $value || $value == -* ]]; then
-    echo "Error: Argument for $type is missing" >&2
-    usage
-    exit 1
+    shift
+
+    local expected_arg_count
+    case "$type" in
+	    -D|--dependency)
+		    expected_arg_count=2
+		    ;;
+	    *)
+		    expected_arg_count=1
+		    ;;
+    esac
+
+    if [[ $# -ne $expected_arg_count ]]; then
+	    echo "Error: Incorrect number of arguments for $type" >&2
+	    usage
+	    exit 1
     fi
 }
 
@@ -216,7 +235,7 @@ function combination(){
                 echo "Namespace: $namespace, Object Type: $object"
                 name_list+=($(kubectl get $object --kubeconfig $SRC_KUBECONFIG -n $namespace --no-headers=true -o custom-columns=NAME:.metadata.name | grep -v 'kube-root-ca.crt'| grep -v 'kubernetes'| grep -v 'default'))
                 for name in "${name_list[@]}"; do
-                    cloneAndModifyYaml "$object" "$namespace" "$DEST_KUBECONFIG" "$name"
+                    cloneAndModifyYaml "$object" "$namespace" "$DEST_KUBECONFIG" "$name" "yes"
                 done
             done
 
@@ -229,7 +248,7 @@ function combination(){
                     echo "Namespace: $namespace, Label: $label, Type: $type"
                     name_list+=($(kubectl get $type --kubeconfig $SRC_KUBECONFIG --selector="$label" -n $namespace --no-headers=true -o custom-columns=NAME:.metadata.name | grep -v 'kube-root-ca.crt'| grep -v 'kubernetes'| grep -v 'default'))
                     for name in "${name_list[@]}"; do
-                        cloneAndModifyYaml "$type" "$namespace" "$DEST_KUBECONFIG" "$name"
+                        cloneAndModifyYaml "$type" "$namespace" "$DEST_KUBECONFIG" "$name" "yes"
                     done
                 done
             done
@@ -242,7 +261,7 @@ function combination(){
                     name_list+=($(kubectl get $object --kubeconfig $SRC_KUBECONFIG -n $namespace --selector="$label" --no-headers=true -o custom-columns=NAME:.metadata.name | grep -v 'kube-root-ca.crt'| grep -v 'kubernetes'| grep -v 'default'))
                 done
                 for name in "${name_list[@]}"; do
-                    cloneAndModifyYaml "$object" "$namespace" "$DEST_KUBECONFIG" "$name"
+                    cloneAndModifyYaml "$object" "$namespace" "$DEST_KUBECONFIG" "$name" "yes"
                 done
             done
         else
@@ -251,7 +270,7 @@ function combination(){
                 local name_list=()
                 name_list+=($(kubectl get $type --kubeconfig $SRC_KUBECONFIG -n $namespace --no-headers=true -o custom-columns=NAME:.metadata.name | grep -v 'kube-root-ca.crt'| grep -v 'kubernetes'| grep -v 'default'))
                 for name in "${name_list[@]}"; do
-                    cloneAndModifyYaml "$type" "$namespace" "$DEST_KUBECONFIG" "$name"
+                    cloneAndModifyYaml "$type" "$namespace" "$DEST_KUBECONFIG" "$name" "yes"
                 done
             done
             echo "Getting and migrating all resources in namespace: $namespace"
@@ -312,6 +331,7 @@ while [[ "$#" -gt 0 ]]; do
             done
             ;;
         -D|--dependency)
+	    require_arg "$@"
             has_DEPENDENCIES=true
             DE_TYPE="$2"
             DE_NAME="$3"
@@ -483,6 +503,15 @@ fi
 #In the future, the resource type is defined by the dependency graph within the source cluster.
 #types=("serviceaccount" "persistentvolumes" "configmaps" "secret" "pods" "deployment" "service" "statefulsets" "daemonsets")
 
+# Preload with all the yaml file of source cluster
+ns_list=($(get_all_namespaces))
+for ns in "${ns_list[@]}"; do
+	checkNamespace "$ns"
+	for type in "${types[@]}"; do
+		cloneAndModifyYaml "$type" "$ns" "$DEST_KUBECONFIG"
+	done
+done
+
 # apply order must be: "persistentvolumes" "configmaps" "secret" "pods" "deployment" "service" "replicasets" "statefulsets" "daemonsets"
 if [[ $ALL ]] ; then
     echo "Cloning all objects from source cluster with KUBECONFIG: ${SRC_KUBECONFIG} to destination cluster with KUBECONFIG: ${DEST_KUBECONFIG}..."
@@ -492,10 +521,10 @@ if [[ $ALL ]] ; then
     for namespace in "${namespace_list[@]}"; do
         checkNamespace "$namespace"
         for type in "${types[@]}"; do
-            cloneAndModifyYaml "$type" "$namespace" "$DEST_KUBECONFIG"
+            cloneAndModifyYaml "$type" "$namespace" "$DEST_KUBECONFIG" "yes"
         done
     done
-    exit 0
+    #exit 0
 fi
 
 # get all dependencies and add in OBJECT list
