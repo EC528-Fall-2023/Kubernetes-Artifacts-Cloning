@@ -8,19 +8,33 @@ def extract_resources(yaml_file):
                 if obj is None:
                     continue
                 kind = obj.get('kind')
-                if kind in ['Deployment', 'ReplicaSet', 'StatefulSet', 'DaemonSet']:
-                    metadata = obj.get('metadata', {})
-                    name = metadata.get('name', 'Unknown')
+                metadata = obj.get('metadata', {})
+                name = metadata.get('name', 'Unknown')
+
+                if kind in ['Deployment', 'ReplicaSet', 'DaemonSet', 'StatefulSet']:
                     spec = obj.get('spec', {})
-                    replicas = spec.get('replicas', 'N/A' if kind == 'DaemonSet' else 1)
+                    replicas = spec.get('replicas', 'N/A' if kind in ['DaemonSet', 'StatefulSet'] else 1)
                     template = spec.get('template', {})
                     pod_spec = template.get('spec', {})
                     containers = pod_spec.get('containers', [])
-                    for container in containers:
-                        resources = container.get('resources', {})
-                        print("Object Name:", name, ", Type:", kind, ", Replicas:", str(replicas), ", Resources:", resources)
+                    resources_list = [container.get('resources', {}) for container in containers]
+
+                    if kind == 'StatefulSet':
+                        volume_templates = spec.get('volumeClaimTemplates', [])
+                        for template in volume_templates:
+                            storage = template.get('spec', {}).get('resources', {}).get('requests', {}).get('storage', 'Unknown')
+                            resources_list.append({'storage': storage})
+
+                    print("Object Name:", name, ", Type:", kind, ", Replicas:", str(replicas), ", Resources:", resources_list)
+
+                elif kind == 'PersistentVolumeClaim':
+                    spec = obj.get('spec', {})
+                    storage = spec.get('resources', {}).get('requests', {}).get('storage', 'Unknown')
+                    resources = {'storage': storage}
+                    print("Object Name:", name, ", Type:", kind, ", Replicas: N/A, Resources:", resources)
+
         except yaml.YAMLError as exc:
-            print(f"Error parsing YAML file: {exc}")
+            print("Error parsing YAML file:", exc)
 
 if __name__ == "__main__":
     yaml_file = "info_of_minikube.yaml"
