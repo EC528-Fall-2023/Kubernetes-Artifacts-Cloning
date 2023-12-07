@@ -13,25 +13,6 @@ Project Mentors:
 - Pankaj Thorat
 ---
 
-## Demo
-1. Sprint 1 Demo
-  - Video: https://drive.google.com/file/d/1Z4qHl7f_VoqTE5u_RJZHtbc5YJk-_zHp/view?usp=sharing
-  - Slide: https://docs.google.com/presentation/d/1FwfGiANWx7YXiKDqEk44b3bk1b8Ca_JUZ4UpKAlLGbk/edit?usp=share_link
-2. Sprint 2 Demo
-  - Video: https://drive.google.com/file/d/1N1lxMwgkdPSXE-OrpjoDQ2XdskJj7fPM/view?usp=sharing
-  - Slide: https://docs.google.com/presentation/d/18NDsu-o_hRxpfE_t5pgW4kGkH9WqZ_N9FCPA-ZMZKhE/edit?usp=sharing
-3. Sprint 3 Demo
-  - Video: https://drive.google.com/file/d/1XQgMggvMHjYAgVdGXt7POdgEj9JA3ngk/view?usp=sharing
-  - Slide: https://docs.google.com/presentation/d/1oBbQ8YCLvOvei6NFMF049_H8_1s0dvXjS06JYqgdUcA/edit?usp=sharing
-4. Sprint 4 Demo
-  - Video: https://drive.google.com/file/d/14vOJKMWeUFISYpvTXTyU6z9B0jKTG4GD/view?usp=sharing
-  - Slide: https://docs.google.com/presentation/d/1-Ov7xDmd_bAE6YLBiOw2xXWs8F-GsdqVh7idgD6a9QA/edit?usp=sharing
-5. Sprint 5 Demo
-  - Video: https://drive.google.com/file/d/19hDyxi9tkjuKPsTYhuMZqmsBGM3GJOWQ/view?usp=sharing
-  - Slide: https://docs.google.com/presentation/d/16kFlbbW4UtgqDe_5kSvygncAoa8n9rDRMb3C-6vc2wk/edit?usp=sharing
-
----
-
 ## Vision and Goals of The Project: 
 As modern computing trends increasingly shift towards offloading computational tasks to the cloud, the deployment of Kubernetes, an open-source platform designed for managing containerized workloads and services, has become indispensable for cloud data centers. 
 
@@ -193,3 +174,24 @@ Example:
 - **Node:** A Kubernetes Node is a worker machine responsible for running and managing containerized applications. Nodes are the underlying hardware or virtual machines on which Kubernetes runs. Each node has the necessary components to run pods and is managed by the control plane. These components include the kubelet, which is responsible for communication between the control plane and the node, and the kube-proxy, which maintains network rules on the node.
 
 - **Cluster:** A cluster refers to the set of nodes that run containerized applications. These nodes can be physical machines or virtual machines. The cluster is the foundation of Kubernetes and is responsible for running the applications and managing the workloads. It provides a platform for orchestrating and managing containerized applications, ensuring that they run smoothly and reliably.
+
+---
+
+## Demo
+1. Sprint 1 Demo
+  - Video: https://drive.google.com/file/d/1Z4qHl7f_VoqTE5u_RJZHtbc5YJk-_zHp/view?usp=sharing
+  - Slide: https://docs.google.com/presentation/d/1FwfGiANWx7YXiKDqEk44b3bk1b8Ca_JUZ4UpKAlLGbk/edit?usp=share_link
+2. Sprint 2 Demo
+  - Video: https://drive.google.com/file/d/1N1lxMwgkdPSXE-OrpjoDQ2XdskJj7fPM/view?usp=sharing
+  - Slide: https://docs.google.com/presentation/d/18NDsu-o_hRxpfE_t5pgW4kGkH9WqZ_N9FCPA-ZMZKhE/edit?usp=sharing
+3. Sprint 3 Demo
+  - Video: https://drive.google.com/file/d/1XQgMggvMHjYAgVdGXt7POdgEj9JA3ngk/view?usp=sharing
+  - Slide: https://docs.google.com/presentation/d/1oBbQ8YCLvOvei6NFMF049_H8_1s0dvXjS06JYqgdUcA/edit?usp=sharing
+4. Sprint 4 Demo
+  - Video: https://drive.google.com/file/d/14vOJKMWeUFISYpvTXTyU6z9B0jKTG4GD/view?usp=sharing
+  - Slide: https://docs.google.com/presentation/d/1-Ov7xDmd_bAE6YLBiOw2xXWs8F-GsdqVh7idgD6a9QA/edit?usp=sharing
+5. Sprint 5 Demo
+  - Video: https://drive.google.com/file/d/19hDyxi9tkjuKPsTYhuMZqmsBGM3GJOWQ/view?usp=sharing
+  - Slide: https://docs.google.com/presentation/d/16kFlbbW4UtgqDe_5kSvygncAoa8n9rDRMb3C-6vc2wk/edit?usp=sharing
+
+---
