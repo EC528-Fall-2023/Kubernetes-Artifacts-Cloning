@@ -529,13 +529,6 @@ else
 
 fi
 
-
-
-# delete the tmp file
-
-rm /tmp/clone/*.yaml
-
-
 # ask user to delete the migrated resources
 
 echo "Do you want to delete the migrated resources (listed below) (y/n)"
@@ -553,3 +546,8 @@ if [ "$delete_answer" = "y" ] || [ "$delete_answer" = "Y" ]; then
     done
 
 fi
+
+# delete the tmp file
+
+rm /tmp/clone/*.yaml
+
