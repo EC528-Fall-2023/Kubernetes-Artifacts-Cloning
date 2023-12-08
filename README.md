@@ -193,5 +193,6 @@ Example:
 5. Sprint 5 Demo
   - Video: https://drive.google.com/file/d/19hDyxi9tkjuKPsTYhuMZqmsBGM3GJOWQ/view?usp=sharing
   - Slide: https://docs.google.com/presentation/d/16kFlbbW4UtgqDe_5kSvygncAoa8n9rDRMb3C-6vc2wk/edit?usp=sharing
-
+6. Final Presentation
+  - Slide: https://docs.google.com/presentation/d/1TS0Wn9Ys7bTXZ6bUJxbx2ii5l7ozIhSW2t5AYiCnyAQ/edit?usp=sharing
 ---
