@@ -25,6 +25,8 @@ function usage() {
 # Check if the namespace exists in target cluster, if not, create it.
 function checkNamespace() {
     local namespace="$1"
+    local create="$2"
+    if [ "$create" != "yes"  ] || [ -z $create  ]; then
     if ! kubectl get namespace "$namespace" --kubeconfig "$DEST_KUBECONFIG" 2>/dev/null; then
         echo "Namespace $namespace does not exist in the target cluster. Creating..."
         if kubectl create namespace "$namespace" --kubeconfig "$DEST_KUBECONFIG"; then
@@ -33,6 +35,7 @@ function checkNamespace() {
             echo "Failed to create namespace $namespace."
             exit 1
         fi
+    fi
     fi
 }
 
@@ -118,7 +121,7 @@ function cloneAndModifyYaml() {
     fi
 
     # Check if the resource name is specified
-    if [ -z "$resource_name" ]; then
+    if [ -z "$resource_name" ] || [ $resource_name="ALL" ]; then
         local names=($(kubectl get "$resource_type" --kubeconfig $SRC_KUBECONFIG -n "$namespace" --no-headers=true -o custom-columns=NAME:.metadata.name | grep -v 'kube-root-ca.crt' | grep -v 'kubernetes' | grep -v 'default'))
     else
         local names=("$resource_name")
@@ -165,7 +168,7 @@ function cloneAndModifyYaml() {
         if [ "$resource_exists" = true ]; then
             echo "$n already existed in the target cluster and has been replaced."
         else
-            echo "$n migrated to the target cluster."
+            echo "$n cloned to the target cluster."
         fi
            
     fi
@@ -498,7 +501,7 @@ echo ""
 # Preload with all the yaml file of source cluster
 ns_list=($(get_all_namespaces))
 for ns in "${ns_list[@]}"; do
-    checkNamespace "$ns"
+    checkNamespace "$ns" "yes"
     for type in "${types[@]}"; do
         cloneAndModifyYaml "$type" "$ns" "$DEST_KUBECONFIG"
     done
@@ -513,7 +516,7 @@ if [[ $ALL ]] ; then
     for namespace in "${namespace_list[@]}"; do
         checkNamespace "$namespace"
         for type in "${types[@]}"; do
-            cloneAndModifyYaml "$type" "$namespace" "$DEST_KUBECONFIG" "yes"
+            cloneAndModifyYaml "$type" "$namespace" "$DEST_KUBECONFIG" "ALL" "yes"
         done
     done
     #exit 0
@@ -529,9 +532,9 @@ else
 
 fi
 
-# ask user to delete the migrated resources
+# ask user to delete the cloned resources
 
-echo "Do you want to delete the migrated resources (listed below) (y/n)"
+echo "Do you want to delete the cloned resources (listed below) (y/n)"
 for entry in "${CLONED_RESOURCES[@]}"; do
     IFS=',' read -r namespace type name <<< "$entry"
     echo "Namespace: $namespace, Resource Type: $type, Resource Name: $name"
@@ -549,5 +552,5 @@ fi
 
 # delete the tmp file
 
-rm /tmp/clone/*.yaml
+#rm /tmp/clone/*.yaml
 
