@@ -24,9 +24,9 @@ Overall, this seamless method of copying and pasting a Kubernetes object will pr
 
 ---
 ## Users/Personas Of The Project:
- - **Cloud Developers:** Cloud developers are empowered by this tool to seamlessly migrate deployed Kubernetes objects, or artifacts, between clusters with varying environment setups. It simplifies the process of replicating applications across different stages of development, testing, and production, ensuring consistency and reducing manual configuration overhead.
+ - **Cloud Developers:** Cloud developers are empowered by this tool to seamlessly clone deployed Kubernetes objects, or artifacts, between clusters with varying environment setups. It simplifies the process of replicating applications across different stages of development, testing, and production, ensuring consistency and reducing manual configuration overhead.
 
- - **Site Reliability Engineers (SREs):** SREs can rely on this tool to efficiently duplicate and migrate entire application ecosystems across clusters with diverse configurations. This capability greatly assists in their responsibilities of maintaining application reliability, diagnosing issues, and conducting extensive testing in different environments, ultimately enhancing the overall resilience of the system.
+ - **Site Reliability Engineers (SREs):** SREs can rely on this tool to efficiently duplicate and clone entire application ecosystems across clusters with diverse configurations. This capability greatly assists in their responsibilities of maintaining application reliability, diagnosing issues, and conducting extensive testing in different environments, ultimately enhancing the overall resilience of the system.
 
 ---
 ## Solution Architecture:
@@ -36,7 +36,7 @@ Overall, this seamless method of copying and pasting a Kubernetes object will pr
 
 ---
 ## Solution Concept:
-### Build a kubectl plugin called **clone** that can migrate specified objects from source cluster to destination cluster
+### Build a kubectl plugin called **clone** that can clone specified objects from source cluster to destination cluster
 - **Label Selector**
   Allow selection of user-defined labels to get objects.
   Can be done by
