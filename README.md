@@ -84,9 +84,9 @@ Overall, this seamless method of copying and pasting a Kubernetes object will pr
      - StatefulSets
      - ConfigMaps
      - Secrets
-   3. Ability to migrate the whole namespace that can consist of multiple objects
-   4. Ability to migrate over objects by label
-   5. Ability to migrate the whole cluster (including all its objects)
+   3. Ability to clone the whole namespace that can consist of multiple objects
+   4. Ability to clone over objects by label
+   5. Ability to clone the whole cluster (including all its objects)
 
      Example: kubectl -s source_cluster -d destination_cluster --all -n namespace
 ---
@@ -99,7 +99,7 @@ kubectl clone
   -o/--objects pods, services, ……….., all
   -l/--labels  e.g. app=robot-shop  
   -n/--namepsace <name>
-  -a/--all Everything that exists in this cluster should be migrated
+  -a/--all Everything that exists in this cluster should be cloned
   -i/--item Specified single object with related dependencies
   -h/--help Get usage of plugin
 
@@ -158,10 +158,10 @@ kubectl clone -s src-config.yaml -d dest-config.yaml -l app=mongo
 - ### First Sprint:
    1. Learn about Kubernetes architecture
    2. Create a small-scale Kubernetes deployment with ~2 or more machines
-   3. Migrate namespaces within the same cluster
+   3. Clone namespaces within the same cluster
 - ### Second Sprint:
    1. Deploy a more complex Kubernetes application to a Kubernetes cluster
-   2. Migrating objects between clusters
+   2. Cloning objects between clusters
    3. Snapshot the ETCD
    4. Use Kubeview to visualize dependency
 - ### Third Sprint:
@@ -176,7 +176,7 @@ kubectl clone -s src-config.yaml -d dest-config.yaml -l app=mongo
    3. Get all dependencies of a specific object inside a cluster
 - ### Fifth Sprint:
    1. Performance analysis of kubectl clone
-   2. Use Velereo to migrate PVC Data
+   2. Use Velereo to clone PVC Data
    3. Finalize kubectl clone plugin reach goals
  
 ---
