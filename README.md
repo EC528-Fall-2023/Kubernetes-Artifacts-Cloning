@@ -110,6 +110,50 @@ Example:
  - kubectl clone -a -s source_config -d dest_config 
 
 ---
+## Instructions for Downloading (Linux Environment):
+
+### Step 1: Clone the repository
+```bash
+git clone https://github.com/EC528-Fall-2023/Kubernetes-Artifacts-Cloning.git
+```
+### Step 2: Navigate into the repository and grant executable permission to kubectl-clone:
+```bash
+cd Kubernetes-Artifacts-Cloning
+chmod +x kubectl-clone
+  ```
+### Step 3: Move kubectl-clone to the bin directory:
+```bash
+sudo mv kubectl-clone /usr/local/bin/
+```
+### Now you have the kubctl-clone plugin installed and you can start using it
+## How to use it
+### First, have kubeconfig files for both source and destination clusters.
+- ##### Run the following command to go to the the desired cluster:
+  ```bash
+  kubectl config use-contexts <Cluster_you_want_to_get_into>
+  ```
+- ##### Run the following command to get current cluster's kubeconfig file
+  ```bash
+   kubectl config view --raw > "/<Desired path to save the kubeconfig file of the current cluster>/$<Desired kubeconfig file name>.yaml"
+  ```
+
+### Second, run commands based on different scenarios:
+#### Scenario 1: Clone everything from one cluster to another cluster using flag: -a
+```
+kubectl clone -s source_config -d dest_config -a
+```
+#### Scenario 2: Clone specific object type(s) using flag: -o. For example: pod and service. Seperate object types using "," and no space between each object type):
+```
+kubectl clone -s src-config.yaml -d dest-config.yaml -o pod,service
+```
+#### Scenario 3: Clone objects in a specific namespace using flag: -n. For example: we just want to clone the "default" namespace:
+```
+kubectl clone -s src-config.yaml -d dest-config.yaml -n default
+```
+#### Scenario 4: Clone objects that have specific label using flag: -l. For example: clone a pod that is labelled as: app=mongo:
+```
+kubectl clone -s src-config.yaml -d dest-config.yaml -l app=mongo
+```
 ## Release Planning:
 - ### First Sprint:
    1. Learn about Kubernetes architecture
