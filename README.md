@@ -61,7 +61,7 @@ Overall, this seamless method of copying and pasting a Kubernetes object will pr
   - Method 2: Filter through YAML files to get dependency. (Need to validate feasibility)
 - **Copy Entire Cluster**
   - Method 1: Get needed object information through the Kubernetes API server into a YAML file.
-  - Method 2: Get needed object information through ETCD snapshot into a YAML file.
+
 ---
 ## Scope and Features Of The Project:
  - **Easy to use:** Given the command line code specifying source and destination cluster an automatic cloning of artifacts should occur. 
