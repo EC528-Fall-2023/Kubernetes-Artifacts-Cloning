@@ -30,7 +30,8 @@ Overall, this seamless method of copying and pasting a Kubernetes object will pr
 
 ---
 ## Solution Architecture:
-<img width="479" alt="Solution Architecture Image" src="https://github.com/EC528-Fall-2023/Kubernetes-Artifacts-Cloning/assets/36748450/66210d49-6490-479d-83b0-6f7e70f7ffbb">
+<img width="502" alt="Screenshot 2023-12-14 at 2 32 27 PM" src="https://github.com/EC528-Fall-2023/Kubernetes-Artifacts-Cloning/assets/36748450/80758be9-bd32-406c-ac75-f3f45d0c1c02">
+
 
 
 
