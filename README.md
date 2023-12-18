@@ -239,5 +239,6 @@ kubectl clone -s src-config.yaml -d dest-config.yaml -l app=mongo
   - Video: https://drive.google.com/file/d/19hDyxi9tkjuKPsTYhuMZqmsBGM3GJOWQ/view?usp=sharing
   - Slide: https://docs.google.com/presentation/d/16kFlbbW4UtgqDe_5kSvygncAoa8n9rDRMb3C-6vc2wk/edit?usp=sharing
 6. Final Presentation
+  - Video: https://drive.google.com/file/d/1SOCeD6-OKAEZnaDg9abVFxBX4wY0jnYa/view?usp=sharing
   - Slide: https://docs.google.com/presentation/d/1TS0Wn9Ys7bTXZ6bUJxbx2ii5l7ozIhSW2t5AYiCnyAQ/edit?usp=sharing
 ---
